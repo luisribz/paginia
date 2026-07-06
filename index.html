@@ -325,9 +325,9 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <script>
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
-/* v1.1.0 */
-const APP_VERSION = "1.1.0";
-const WHATS_NEW = "Friends & sharing (Settings), book descriptions on the book page, smarter covers \u2014 run Settings \u2192 Improve covers once \u2014 and a refreshed logo.";
+/* v1.2.0 */
+const APP_VERSION = "1.2.0";
+const WHATS_NEW = "Tap a search result to preview it before adding, and books now match themselves on Open Library when you open them \u2014 so descriptions and covers appear automatically.";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
@@ -977,7 +977,7 @@ function viewSearch(){
   else if(searchResults.length){
     h += searchResults.map((d,i)=>{
       const inLib = d.olk && Object.values(state.books).find(b=>b.olKey===d.olk);
-      return `<div class="card" ${inLib?`onclick="openBook('${inLib.key}')"`:""}>
+      return `<div class="card" onclick="openSearchPreview(${i})">
         ${d.cover
           ? `<img class="poster" src="${esc(d.cover)}" loading="lazy" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="poster ph" style="display:none">${I.book}</div>`
           : `<div class="poster ph">${I.book}</div>`}
@@ -988,7 +988,7 @@ function viewSearch(){
         </div>
         ${inLib
           ? `<span class="starmini" style="flex-shrink:0">✓ In library</span>`
-          : `<button class="abtn primary" style="flex:0 0 auto;padding:10px 16px" onclick="openAddModal(${i})">Add</button>`}
+          : `<button class="abtn primary" style="flex:0 0 auto;padding:10px 16px" onclick="event.stopPropagation();openAddModal(${i})">Add</button>`}
       </div>`;
     }).join("");
   } else if(lastSearchQ) h += `<div class="empty"><div class="big">🤷</div>Nothing found for “${esc(lastSearchQ)}”.</div>`;
@@ -1027,7 +1027,7 @@ function openAddModal(i){
   $("#modal").classList.remove("hidden");
   $("#modal").onclick = closeModal;
 }
-function addFromSearch(i, st){
+function addFromSearch(i, st, open){
   const d = searchResults[i];
   if(!d) return;
   const key = d.olk ? "ol"+d.olk : "m"+Date.now();
@@ -1040,7 +1040,8 @@ function addFromSearch(i, st){
   if(st==="reading") b.cur = {page:0, start:todayStr(), updatedAt:Date.now()};
   state.books[key] = b;
   save(); closeModal(); render();
-  if(st==="read"){ openBook(key); openFinish(key); }
+  if(open){ previewIdx = null; openBook(key); if(st==="read") openFinish(key); }
+  else if(st==="read"){ openBook(key); openFinish(key); }
   else toast(`“${b.title}” added ✓`, 3500, {label:"Open", fn:()=>openBook(key)});
 }
 function openManualAdd(){
@@ -1071,6 +1072,63 @@ function addManual(){
   toast(`“${title}” added ✓`, 3500, {label:"Open", fn:()=>openBook(key)});
 }
 
+/* ---------- search preview sheet ---------- */
+let previewIdx = null;
+function openSearchPreview(i){
+  const d = searchResults[i];
+  if(!d) return;
+  const inLib = d.olk && Object.values(state.books).find(b=>b.olKey===d.olk);
+  if(inLib){ openBook(inLib.key); return; }
+  previewIdx = i;
+  descOpen = false;
+  listScroll = window.scrollY || 0;
+  currentSheetKey = null;
+  renderPreview();
+  $("#sheet").classList.remove("hidden");
+  window.scrollTo(0,0);
+  if(d.olk) fetchDesc(d.olk).then(()=>{ if(previewIdx === i) renderPreview(); });
+}
+function renderPreview(){
+  const d = searchResults[previewIdx];
+  if(!d){ closeSheet(); return; }
+  let descPart = "";
+  if(d.olk){
+    const dd = descCache[d.olk];
+    if(dd === undefined || dd === null) descPart = `<div class="smallmeta" style="margin:14px 2px 0">Loading description…</div>`;
+    else if(!dd) descPart = `<div class="smallmeta" style="margin:14px 2px 0">No description on Open Library.</div>`;
+    else {
+      const long = dd.length > 460;
+      const shown = (long && !descOpen) ? dd.slice(0,460).replace(/\s+\S*$/,"")+"…" : dd;
+      descPart = `<div class="note" style="margin:16px 0 0">${esc(shown)}${long?` <button style="color:var(--acc);font-weight:700" onclick="descOpen=!descOpen;renderPreview()">${descOpen?"less":"more"}</button>`:""}</div>`;
+    }
+  }
+  $("#sheet").innerHTML = `
+  <div class="hero">
+    ${d.cover?`<div class="hbg" style="background-image:url('${esc(d.cover)}')"></div>`:`<div class="hbg" style="background:var(--grad);opacity:.35"></div>`}
+    <div class="hgrad"></div>
+    <button class="icon-btn hback" onclick="closeSheet()">${I.back}</button>
+  </div>
+  <div class="dwrap">
+    <div class="dtop">
+      ${d.cover
+        ? `<img src="${esc(d.cover)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="dph" style="display:none"><span>${esc(d.title)}</span></div>`
+        : `<div class="dph"><span>${esc(d.title)}</span></div>`}
+      <div class="dhead">
+        <div class="dtitle">${esc(d.title)}</div>
+        <div class="dmeta">${esc(d.author||"")}<br>${d.year||""}${d.pages?` · <span class="pgnum">${d.pages} pages</span>`:""}</div>
+      </div>
+    </div>
+    ${descPart}
+    <h2 class="sec">Add to library</h2>
+    <div class="actions">
+      <button class="abtn" onclick="addFromSearch(${previewIdx},'to_read',true)">To read</button>
+      <button class="abtn" onclick="addFromSearch(${previewIdx},'reading',true)">Reading</button>
+      <button class="abtn primary" onclick="addFromSearch(${previewIdx},'read',true)">Read ✓</button>
+    </div>
+    ${d.olk?`<a class="abtn" style="width:100%;display:block;text-decoration:none;margin-top:4px" href="${OL}/works/${esc(d.olk)}" target="_blank" rel="noopener">Open Library page ↗</a>`:""}
+  </div>`;
+}
+
 /* ---------- book sheet ---------- */
 let listScroll = 0;
 function openBook(key){
@@ -1079,13 +1137,13 @@ function openBook(key){
   listScroll = window.scrollY || 0;
   currentSheetKey = key;
   descOpen = false;
-  loadDesc(key);
+  if(b.olKey) loadDesc(key); else autoMatch(key);
   loadFriendFeeds().then(ref=>{ if(ref && currentSheetKey===key) renderSheet(key); });
   renderSheet(key);
   $("#sheet").classList.remove("hidden");
   window.scrollTo(0,0);
 }
-function closeSheet(){ $("#sheet").classList.add("hidden"); currentSheetKey = null; render(); window.scrollTo(0, listScroll); }
+function closeSheet(){ $("#sheet").classList.add("hidden"); currentSheetKey = null; previewIdx = null; render(); window.scrollTo(0, listScroll); }
 function renderSheet(key){
   const b = state.books[key];
   if(!b){ closeSheet(); return; }
@@ -1426,30 +1484,53 @@ function importGoodreads(txt){
 /* ---------- book description (Open Library, fetched live, never stored) ---------- */
 let descCache = {}, descOpen = false;
 function descHtml(b){
-  if(!b.olKey) return `<div id="bdesc"></div>`;
+  if(!b.olKey) return `<div id="bdesc" class="smallmeta" style="margin:14px 2px 0">${b.olTried?"No Open Library match found — “Match on Open Library” below fixes the cover and description.":""}</div>`;
   const d = descCache[b.olKey];
   if(d === undefined || d === null) return `<div id="bdesc" class="smallmeta" style="margin:14px 2px 0">Loading description…</div>`;
-  if(!d) return `<div id="bdesc"></div>`;
+  if(!d) return `<div id="bdesc" class="smallmeta" style="margin:14px 2px 0">No description on Open Library.</div>`;
   const long = d.length > 320;
   const shown = (long && !descOpen) ? d.slice(0, 320).replace(/\s+\S*$/,"") + "…" : d;
   return `<div id="bdesc" class="note" style="margin:16px 0 0">${esc(shown)}${long?` <button style="color:var(--acc);font-weight:700" onclick="descOpen=!descOpen;renderSheet('${b.key}')">${descOpen?"less":"more"}</button>`:""}</div>`;
 }
-async function loadDesc(key){
-  const b = state.books[key];
-  if(!b || !b.olKey || descCache[b.olKey] !== undefined) return;
-  descCache[b.olKey] = null; // in flight
+async function fetchDesc(olk){
+  if(descCache[olk] !== undefined) return;
+  descCache[olk] = null; // in flight
   try{
-    const r = await fetch(OL+"/works/"+b.olKey+".json");
+    const r = await fetch(OL+"/works/"+olk+".json");
     const j = await r.json();
     let d = j.description || "";
     if(d && typeof d === "object") d = d.value || "";
     d = String(d).replace(/\[([^\]]*)\]\([^)]*\)/g,"$1").replace(/\r?\n+/g," ").replace(/\s+/g," ").trim();
-    descCache[b.olKey] = d;
-  }catch(e){ descCache[b.olKey] = ""; }
+    descCache[olk] = d;
+  }catch(e){ descCache[olk] = ""; }
+}
+async function loadDesc(key){
+  const b = state.books[key];
+  if(!b || !b.olKey) return;
+  await fetchDesc(b.olKey);
   if(currentSheetKey === key){
     const el = document.getElementById("bdesc");
     if(el) el.outerHTML = descHtml(b);
   }
+}
+/* quiet one-shot auto-match when a book page opens without an OL match */
+async function autoMatch(key){
+  const b = state.books[key];
+  if(!b || b.olKey || b.olTried) return;
+  b.olTried = 1;
+  try{
+    const q = b.title.split(/[:(]/)[0].trim() + " " + (b.author||"").split(",")[0];
+    const r = await fetch(OL+"/search.json?q="+encodeURIComponent(q)+"&limit=5&fields=key,title,author_name,cover_i,number_of_pages_median,first_publish_year");
+    const d = pickBest(b, (await r.json()).docs);
+    if(d){
+      b.olKey = (d.key||"").split("/").pop();
+      if(d.cover_i && (!b.cover || b.cover.indexOf("/b/isbn/") !== -1)) b.cover = `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`;
+      if(!b.pages && d.number_of_pages_median) b.pages = d.number_of_pages_median;
+      if(!b.year && d.first_publish_year) b.year = d.first_publish_year;
+    }
+    save();
+    if(currentSheetKey === key){ renderSheet(key); if(b.olKey) loadDesc(key); }
+  }catch(e){ b.olTried = 0; }
 }
 
 /* ---------- bulk cover / metadata matcher (Open Library) ---------- */
