@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Paginia">
+<title>Paginia</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon-v1.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192-v1.png">
+<style>
+:root{
+  --bg:#0a0c11; --bg2:#12151e; --bg3:#1a1e2a; --bg4:#222738; --line:#242a3a; --line2:#303752;
+  --tx:#f0f2f8; --tx2:#9aa2b8; --tx3:#5d6478;
+  --acc:#e0784a; --acc-2:#f4a261; --grad:linear-gradient(135deg,#e0784a,#f4a261);
+  --green:#34d399; --red:#fb7185; --gold:#fbbf24;
+  --hdrbg:rgba(10,12,17,.85); --navbg:rgba(13,15,22,.88); --toastbg:#252b3d;
+  --rad:16px; --rad-s:10px;
+  --sab:env(safe-area-inset-bottom,0px); --sat:env(safe-area-inset-top,0px);
+  --shadow:0 4px 16px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+html[data-theme="light"]{
+  --bg:#f6f4f0; --bg2:#ffffff; --bg3:#eeeae3; --bg4:#e2dcd2; --line:#e8e3da; --line2:#d2cabd;
+  --tx:#1d1a15; --tx2:#5f584d; --tx3:#98907f;
+  --hdrbg:rgba(246,244,240,.85); --navbg:rgba(250,248,245,.92); --toastbg:#ffffff;
+  --shadow:0 4px 14px rgba(60,45,30,.08);
+  --gold:#b8860b;
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;overscroll-behavior-y:none}
+body{
+  background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  font-size:15px;line-height:1.45;min-height:100%;
+  padding-bottom:calc(76px + var(--sab));
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  transition:background .2s;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;user-select:none;-webkit-user-select:none}
+input,select{font:inherit}
+input{font-size:16px} /* prevents iOS focus zoom */
+img{display:block}
+svg{display:block}
+.hidden{display:none!important}
+::selection{background:rgba(224,120,74,.35)}
+
+/* ── header ─────────────────────────────── */
+header{
+  position:sticky;top:0;z-index:40;
+  background:var(--hdrbg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--line);
+  padding:calc(12px + var(--sat)) 18px 12px;
+  display:flex;align-items:center;gap:12px;
+}
+.logo{display:flex;align-items:center;gap:9px}
+.logo-mark{
+  width:30px;height:30px;border-radius:9px;background:#12151e;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid #242a3a;
+  box-shadow:0 2px 10px rgba(224,120,74,.25);
+}
+.logo-mark svg{width:19px;height:19px}
+.logo h1{
+  font-size:18px;font-weight:800;letter-spacing:-.2px;
+  background:linear-gradient(135deg,var(--tx),var(--acc));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.hbtns{margin-left:auto;display:flex;gap:8px}
+.icon-btn{
+  width:38px;height:38px;border-radius:12px;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);transition:transform .12s,background .12s;
+}
+.icon-btn svg{width:18px;height:18px;stroke:var(--tx2);stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.icon-btn:active{transform:scale(.9);background:var(--bg4)}
+
+/* ── bottom nav ─────────────────────────── */
+nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:40;
+  background:var(--navbg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-top:1px solid var(--line);
+  display:flex;padding:6px 8px calc(6px + var(--sab));
+}
+nav button{
+  flex:1;padding:7px 0 5px;display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-size:10px;color:var(--tx3);font-weight:600;letter-spacing:.2px;border-radius:12px;
+  position:relative;transition:color .15s;
+}
+nav button svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+nav button.act{color:var(--acc)}
+nav button.act svg{transform:translateY(-1px)}
+nav button.act::before{content:"";position:absolute;top:-7px;width:24px;height:3px;border-radius:0 0 3px 3px;background:var(--grad)}
+
+main{max-width:640px;margin:0 auto;padding:16px 16px 30px;animation:fadein .18s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h2.sec{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--gold);margin:22px 2px 10px;font-weight:800}
+.empty{text-align:center;color:var(--tx3);padding:64px 24px;font-size:14px;line-height:1.7}
+.empty .big{font-size:44px;margin-bottom:14px;filter:grayscale(.3);opacity:.9}
+
+/* ── chips ──────────────────────────────── */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  white-space:nowrap;background:var(--bg3);border:1px solid var(--line);color:var(--tx2);
+  border-radius:20px;padding:7px 15px;font-size:13px;font-weight:600;transition:all .15s;
+}
+.chip:active{transform:scale(.95)}
+.chip.act{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 2px 10px rgba(224,120,74,.35)}
+.chip.gold.act{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#151209;box-shadow:0 2px 10px rgba(251,191,36,.35)}
+
+/* ── cards ──────────────────────────────── */
+.card{
+  background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad);
+  display:flex;gap:13px;padding:11px;margin-bottom:11px;align-items:center;
+  box-shadow:var(--shadow);
+}
+.poster{width:56px;height:84px;border-radius:var(--rad-s);object-fit:cover;background:var(--bg3);flex-shrink:0}
+.poster.ph{display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+.poster.ph svg{width:22px;height:22px;stroke:var(--tx3);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.card .info{flex:1;min-width:0}
+.card .title{font-weight:700;font-size:15px;letter-spacing:-.1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .sub{font-size:13px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.card .meta{font-size:11.5px;color:var(--tx3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pgnum{color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums}
+.check-btn{
+  width:48px;height:48px;border-radius:50%;flex-shrink:0;
+  background:var(--bg3);border:1.5px solid var(--line2);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.check-btn svg{width:20px;height:20px;stroke:var(--green);stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.check-btn:active{background:var(--green);border-color:var(--green);transform:scale(.88)}
+.check-btn:active svg{stroke:#0a0c11}
+.left-num{font-size:10.5px;color:var(--gold);text-align:center;margin-top:4px;font-weight:700}
+.progress{height:5px;background:var(--bg3);border-radius:3px;margin-top:8px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--grad);border-radius:3px;transition:width .3s}
+.progress i.full{background:var(--green)}
+.progress.big{height:8px;border-radius:4px}
+
+/* history / read rows */
+.hrow{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad);padding:10px 12px;margin-bottom:9px}
+.hrow .hinfo{flex:1;min-width:0}
+.hrow .ht{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hrow .hs{font-size:12.5px;color:var(--tx2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hrow .hd{font-size:11px;color:var(--gold);font-weight:700;flex-shrink:0;text-align:right;line-height:1.5}
+.unmark{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.unmark svg{width:15px;height:15px;stroke:var(--red);stroke-width:2.2;fill:none;stroke-linecap:round}
+.unmark:active{transform:scale(.9)}
+.hposter{width:40px;height:58px;border-radius:8px;object-fit:cover;background:var(--bg3);flex-shrink:0}
+.starmini{color:var(--gold);font-weight:800;font-size:12px}
+
+/* ── library grid ───────────────────────── */
+.searchbar{display:flex;gap:8px;margin-bottom:12px;position:sticky;top:calc(62px + var(--sat));z-index:30;background:var(--bg);padding:8px 0}
+.inputwrap{flex:1;position:relative;display:flex}
+.inputwrap input{width:100%}
+.clearbtn{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;background:var(--bg4);color:var(--tx2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;line-height:1}
+.searchbar input{
+  flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+  padding:12px 16px;color:var(--tx);outline:none;transition:border .15s;
+}
+.searchbar input::placeholder{color:var(--tx3)}
+.searchbar input:focus{border-color:var(--acc)}
+.searchbar .icon-btn{width:46px;height:46px;border-radius:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:11px}
+.gcell{position:relative;border-radius:12px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);transition:transform .12s;box-shadow:var(--shadow)}
+.gcell:active{transform:scale(.96)}
+.gcell img{width:100%;aspect-ratio:2/3;object-fit:cover}
+.gcell .gph{width:100%;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;background:var(--bg3);padding:8px;text-align:center}
+.gcell .gph span{font-size:10.5px;color:var(--tx2);font-weight:600;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
+.gcell .gt{font-size:11px;font-weight:600;padding:7px 7px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gcell .rt{position:absolute;top:5px;right:5px;border-radius:6px;background:rgba(10,12,17,.75);padding:1.5px 6px;font-size:10.5px;color:#fbbf24;font-weight:800}
+.gcell .gbar{position:absolute;left:0;right:0;height:3px;background:rgba(0,0,0,.55)}
+.gcell .gbar i{display:block;height:100%;background:var(--grad)}
+
+/* ── stats ──────────────────────────────── */
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.stat-card{
+  background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad);
+  padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.stat-card::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad);opacity:.6}
+.stat-card .v{font-size:27px;font-weight:800;letter-spacing:-.5px;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat-card .l{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-top:3px;font-weight:700}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
+.bar-row .bl{width:112px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.bar-row .bt{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bar-row .bt i{display:block;height:100%;background:var(--grad);border-radius:4px}
+.bar-row .bv{width:52px;text-align:right;color:var(--tx2);font-variant-numeric:tabular-nums;font-size:12px;font-weight:600}
+
+/* ── detail sheet ───────────────────────── */
+#sheet{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;padding-bottom:44px;animation:slideup .22s cubic-bezier(.2,.8,.25,1)}
+@keyframes slideup{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+.hero{position:relative;height:190px;overflow:hidden}
+.hero .hbg{position:absolute;inset:-24px;background-size:cover;background-position:center 30%;filter:blur(24px) saturate(1.15) brightness(.72);transform:scale(1.15)}
+.hero .hgrad{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.22),rgba(0,0,0,.45) 55%,var(--bg))}
+.hero .hback{position:absolute;top:calc(12px + var(--sat));left:14px;z-index:3;background:rgba(10,12,17,.55);border-color:rgba(255,255,255,.12)}
+.hero .hback svg{stroke:#e8eaf0}
+.dwrap{max-width:640px;margin:0 auto;padding:0 16px}
+.dtop{display:flex;gap:15px;margin-top:-64px;position:relative;z-index:2}
+.dtop img,.dtop .dph{width:104px;height:156px;border-radius:14px;object-fit:cover;background:var(--bg3);flex-shrink:0;box-shadow:0 10px 30px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.08)}
+.dtop .dph{display:flex;align-items:center;justify-content:center;padding:10px;text-align:center}
+.dtop .dph span{font-size:12px;color:var(--tx2);font-weight:600;line-height:1.4}
+.dhead{padding-top:70px;min-width:0}
+.dtitle{font-size:20px;font-weight:800;letter-spacing:-.3px;line-height:1.2}
+.dmeta{font-size:12.5px;color:var(--tx2);margin-top:6px;line-height:1.65}
+.dmeta u{text-decoration:underline dotted var(--tx3);text-underline-offset:3px;cursor:pointer}
+.dprog{margin-top:18px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad);padding:13px 15px}
+.dprog .dpr{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--tx2);font-weight:600}
+.dprog .dpr b{color:var(--acc);font-size:16px}
+.dprog .dpr span:last-child{color:var(--acc);font-weight:800}
+.statusrow{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
+.actions{display:flex;gap:9px;margin-bottom:18px}
+.abtn{
+  flex:1;background:var(--bg3);border:1px solid var(--line);border-radius:13px;
+  padding:12px;font-size:13.5px;font-weight:700;text-align:center;transition:transform .12s;
+}
+.abtn:active{transform:scale(.96)}
+.abtn.primary{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(224,120,74,.35)}
+.stars{display:flex;gap:7px;margin:6px 0 2px}
+.stars button{width:38px;height:38px;border-radius:10px;background:var(--bg3);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;transition:transform .12s}
+.stars button:active{transform:scale(.88)}
+.stars button svg{width:20px;height:20px;fill:none;stroke:var(--tx3);stroke-width:1.7;stroke-linejoin:round}
+.stars button.on svg{fill:var(--gold);stroke:var(--gold)}
+.tagrow{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 4px}
+.tagchip{background:rgba(224,120,74,.13);color:var(--acc-2);padding:6px 13px;border-radius:15px;font-size:12.5px;font-weight:700;border:none}
+html[data-theme="light"] .tagchip{color:#b4542a;background:rgba(224,120,74,.14)}
+.tagchip.add{background:var(--bg3);color:var(--tx3);border:1px dashed var(--line2)}
+.readrow{display:flex;align-items:center;gap:11px;padding:11px 15px;border-top:1px solid var(--line);font-size:13.5px}
+.readrow:first-of-type{border-top:none}
+.readrow .rn{color:var(--tx3);font-weight:700;font-size:12px;width:24px;flex-shrink:0}
+.readrow .rd{flex:1;color:var(--tx2);font-weight:600}
+.readrow .rd b{color:var(--gold);font-weight:700}
+.readbox{background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad);margin-bottom:11px;overflow:hidden;box-shadow:var(--shadow)}
+.smallmeta{font-size:12px;color:var(--tx3);margin-bottom:8px}
+
+/* ── modal / toast ──────────────────────── */
+#modal{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.62);display:flex;align-items:flex-end;justify-content:center;animation:fadein .15s}
+.mbox{
+  background:var(--bg2);border:1px solid var(--line);border-radius:22px 22px 0 0;
+  width:100%;max-width:640px;padding:22px 20px calc(26px + var(--sab));
+  animation:slideup .22s cubic-bezier(.2,.8,.25,1);
+  max-height:82vh;overflow-y:auto;
+}
+.mbox h3{margin-bottom:14px;font-size:17px;font-weight:800}
+.mrow{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--line);font-size:14.5px;width:100%;text-align:left;font-weight:600}
+.mrow:last-of-type{border-bottom:none}
+.mrow svg{width:19px;height:19px;stroke:var(--tx2);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.mrow .md{margin-left:auto;font-size:12px;color:var(--tx3);text-align:right}
+.minput{width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--tx);outline:none;margin:6px 0 12px}
+.minput:focus{border-color:var(--acc)}
+.mlabel{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:800;margin:6px 2px 4px}
+.toast{
+  position:fixed;bottom:calc(88px + var(--sab));left:50%;transform:translateX(-50%);
+  background:var(--toastbg);border:1px solid var(--line2);color:var(--tx);
+  padding:11px 18px;border-radius:26px;font-size:13.5px;font-weight:600;z-index:80;
+  box-shadow:0 8px 28px rgba(0,0,0,.5);white-space:nowrap;
+  display:flex;align-items:center;gap:14px;animation:toastin .2s cubic-bezier(.2,.8,.25,1);
+  max-width:calc(100vw - 32px);
+}
+@keyframes toastin{from{transform:translate(-50%,12px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+.toast .tmsg{overflow:hidden;text-overflow:ellipsis}
+.toast button{color:var(--gold);font-weight:800;font-size:13px;letter-spacing:.4px;text-transform:uppercase;flex-shrink:0}
+.note{background:var(--bg2);border:1px solid var(--line);border-radius:var(--rad);padding:13px 15px;font-size:13px;color:var(--tx2);margin-bottom:13px;line-height:1.6}
+.note b{color:var(--acc-2)}
+html[data-theme="light"] .note b{color:var(--acc)}
+
+/* build patch: keep every tab >= viewport so the bottom bar never lifts (Episotia v2.11.3 lesson) */
+main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24">
+        <rect x="5" y="2.4" width="3" height="15" rx="1.5" fill="#e0784a"/>
+        <rect x="5" y="2.4" width="10" height="3" rx="1.5" fill="#e0784a"/>
+        <rect x="12" y="2.4" width="3" height="8.5" rx="1.5" fill="#e0784a"/>
+        <rect x="5" y="7.9" width="10" height="3" rx="1.5" fill="#e0784a"/>
+        <polygon points="8.7,5.4 12,5.4 12,13.4 10.35,11.9 8.7,13.4" fill="#fbbf24"/>
+        <circle cx="8.2" cy="21" r="1.3" fill="#e0784a"/>
+        <circle cx="12.2" cy="21" r="1.3" fill="#e0784a"/>
+        <circle cx="16.2" cy="21" r="1.25" fill="none" stroke="#e0784a" stroke-width="1.1"/>
+      </svg>
+    </div>
+    <h1>Paginia</h1>
+  </div>
+  <div class="hbtns">
+    <button class="icon-btn" id="btn-settings" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3h.1a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5h.1a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<nav id="nav">
+  <button data-tab="reading" aria-label="Reading">
+    <svg viewBox="0 0 24 24"><path d="M2 4.5A2.5 2.5 0 0 1 4.5 2H9a3 3 0 0 1 3 3v14a2.4 2.4 0 0 0-2.4-2.4H2z"/><path d="M22 4.5A2.5 2.5 0 0 0 19.5 2H15a3 3 0 0 0-3 3v14a2.4 2.4 0 0 1 2.4-2.4H22z"/></svg>
+    Reading
+  </button>
+  <button data-tab="library" aria-label="Library">
+    <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="1.8"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="1.8"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="1.8"/><rect x="13" y="13" width="7.5" height="7.5" rx="1.8"/></svg>
+    Library
+  </button>
+  <button data-tab="stats" aria-label="Stats">
+    <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    Stats
+  </button>
+  <button data-tab="search" aria-label="Search">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    Search
+  </button>
+</nav>
+
+<div id="sheet" class="hidden"></div>
+<div id="modal" class="hidden"></div>
+
+<script>
+"use strict";
+/* ============ Paginia — personal book tracker ============ */
+/* v1.0.0 */
+const APP_VERSION = "1.0.0";
+const WHATS_NEW = "Welcome to Paginia — track what you read, how fast, and what's next.";
+const LS_KEY = "paginia.v1";
+const GIST_FILE = "paginia-sync.json";
+const OL = "https://openlibrary.org";
+const STATUSES = {
+  reading: {label:"Reading"},
+  read:    {label:"Read"},
+  to_read: {label:"To read"},
+  dnf:     {label:"Unfinished"},
+};
+const I = {
+  book:'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  x:'<svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  star:'<svg viewBox="0 0 24 24"><polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/></svg>',
+  back:'<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>',
+  down:'<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 21h16"/></svg>',
+  up:'<svg viewBox="0 0 24 24"><path d="M12 21V9m0 0 5 5m-5-5-5 5M4 3h16"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  cloud:'<svg viewBox="0 0 24 24"><path d="M17.5 19a4.5 4.5 0 0 0 .42-8.98 7 7 0 0 0-13.36 1.9A4 4 0 0 0 6 19z"/></svg>',
+  moon:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  edit:'<svg viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><polygon points="6 4 20 12 6 20 6 4"/></svg>',
+  link:'<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+};
+let state = null;
+let tab = "reading";
+let searchResults = [];
+let lastSearchQ = "";
+let currentSheetKey = null;
+
+/* ---------- utils ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function fmtDate(a){
+  if(!a) return "—";
+  const d = new Date(a+"T12:00:00");
+  return d.toLocaleDateString(undefined,{day:"numeric",month:"short",year: d.getFullYear()!==new Date().getFullYear()?"numeric":undefined});
+}
+function agoStr(ts){
+  const d = Date.now()-ts;
+  if(d<60000) return "just now";
+  if(d<3600000) return Math.floor(d/60000)+"m ago";
+  if(d<86400000) return Math.floor(d/3600000)+"h ago";
+  if(d<7*86400000) return Math.floor(d/86400000)+"d ago";
+  const dt = new Date(ts);
+  return fmtDate(dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0"));
+}
+function toast(msg, ms=2400, action=null){
+  document.querySelectorAll(".toast").forEach(t=>t.remove());
+  const t = document.createElement("div");
+  t.className = "toast";
+  const span = document.createElement("span");
+  span.className = "tmsg"; span.textContent = msg;
+  t.appendChild(span);
+  if(action){
+    const b = document.createElement("button");
+    b.textContent = action.label;
+    b.onclick = () => { t.remove(); action.fn(); };
+    t.appendChild(b);
+  }
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), ms);
+}
+function save(){
+  state.updatedAt = Date.now();
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  catch(e){ toast("⚠️ Storage full — export a backup!"); }
+  scheduleGistPush();
+}
+function renderKeepFocus(id){
+  const el = document.getElementById(id);
+  const pos = el ? el.selectionStart : 0;
+  render();
+  const el2 = document.getElementById(id);
+  if(el2){ el2.focus(); el2.setSelectionRange(pos,pos); }
+}
+
+/* ---------- theme ---------- */
+const mqLight = (typeof window!=="undefined" && window.matchMedia) ? window.matchMedia("(prefers-color-scheme: light)") : null;
+function resolveTheme(){
+  const pref = (state && state.settings && state.settings.theme) || "system";
+  if(pref==="system") return (mqLight && mqLight.matches) ? "light" : "dark";
+  return pref;
+}
+function applyTheme(){
+  const mode = resolveTheme();
+  document.documentElement.setAttribute("data-theme", mode);
+  const mc = document.querySelector('meta[name="theme-color"]');
+  if(mc) mc.content = mode==="light" ? "#f6f4f0" : "#0a0c11";
+}
+function openThemePicker(){
+  const cur = state.settings.theme;
+  const opts = [["system","System","Follows your phone"],["dark","Dark","Always dark"],["light","Light","Always light"]];
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Theme</h3>
+    ${opts.map(([k,label,desc])=>`<button class="mrow" onclick="setTheme('${k}')">${label}<span class="md">${cur===k?"✓ current":desc}</span></button>`).join("")}
+    <button class="abtn" style="width:100%;margin-top:14px" onclick="openSettings()">‹ Back</button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+}
+function setTheme(k){
+  state.settings.theme = k;
+  save(); applyTheme(); openSettings();
+  toast("Theme: "+({system:"System",dark:"Dark",light:"Light"}[k]));
+}
+if(mqLight && mqLight.addEventListener) mqLight.addEventListener("change", () => {
+  if(state && state.settings.theme==="system") applyTheme();
+});
+
+/* ---------- app self-update check ---------- */
+let updateAvailable = null;
+async function checkAppUpdate(){
+  if(typeof location==="undefined" || !/^https?:$/.test(location.protocol)) return;
+  try{
+    const r = await fetch(location.href.split("?")[0], {cache:"no-store"});
+    const t = await r.text();
+    const m = t.match(/APP_VERSION = "([\d.]+)"/);
+    // integrity check: never offer an update to a truncated deploy
+    if(m && m[1] !== APP_VERSION && !updateAvailable && t.trim().endsWith("<!--PAGINIA-EOF-->")){ updateAvailable = m[1]; render(); }
+  }catch(e){}
+}
+function reloadApp(){ location.replace(location.pathname + "?u=" + Date.now()); }
+
+/* ---------- version ---------- */
+function versionCheck(){
+  if(state.appVersion !== APP_VERSION){
+    const firstRun = !state.appVersion && !Object.keys(state.books).length;
+    state.appVersion = APP_VERSION;
+    if(!firstRun) state.showWhatsNew = APP_VERSION;
+    save();
+  }
+}
+function dismissWhatsNew(){ state.showWhatsNew = null; save(); render(); }
+
+/* ---------- state ---------- */
+function load(){
+  const raw = localStorage.getItem(LS_KEY);
+  if(raw){ try{ state = JSON.parse(raw); }catch(e){ state = null; } }
+  if(!state) state = { books:{}, createdAt:Date.now() };
+  state.books = state.books || {};
+  state.settings = state.settings || {theme:"system"};
+  state.updatedAt = state.updatedAt || Date.now();
+}
+
+/* ---------- cloud sync (private GitHub gist) ---------- */
+let gistPushTimer = null, applyingRemote = false;
+function syncedState(){
+  const c = JSON.parse(JSON.stringify(state));
+  delete c.gist;                       // never let the token leave the device via backups/gist
+  return c;
+}
+async function gistApi(method, path, body){
+  const r = await fetch("https://api.github.com"+path, {
+    method,
+    headers: { "Authorization":"Bearer "+state.gist.token, "Accept":"application/vnd.github+json" },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if(r.status===401 || r.status===403) throw new Error("auth");
+  if(!r.ok) throw new Error("http"+r.status);
+  return r.status===204 ? null : r.json();
+}
+function scheduleGistPush(){
+  if(!state || !state.gist || !state.gist.token || applyingRemote) return;
+  clearTimeout(gistPushTimer);
+  gistPushTimer = setTimeout(gistPush, 3000);
+}
+async function gistPush(){
+  if(!state.gist || !state.gist.token || !state.gist.id) return;
+  try{
+    await gistApi("PATCH", "/gists/"+state.gist.id, { files: { [GIST_FILE]: { content: JSON.stringify(syncedState()) } } });
+    state.gist.lastPush = Date.now();
+    localStorage.setItem(LS_KEY, JSON.stringify(state)); // persist lastPush without re-scheduling
+  }catch(e){
+    if(e.message==="auth") toast("Cloud sync: token invalid — reconnect in Settings", 4000);
+  }
+}
+async function gistFileContent(g){
+  // The gist API truncates file content over ~1MB in JSON responses;
+  // large libraries must be fetched via raw_url instead.
+  const f = g && g.files && g.files[GIST_FILE];
+  if(!f) return null;
+  if(f.content && !f.truncated) return f.content;
+  if(f.raw_url){
+    // no Authorization header here: raw gist URLs are unguessable AND the header breaks CORS preflight in browsers
+    const r = await fetch(f.raw_url);
+    if(r.ok) return r.text();
+  }
+  return f.content || null;
+}
+async function gistPull(){
+  if(!state.gist || !state.gist.token || !state.gist.id) return;
+  try{
+    const content = await gistFileContent(await gistApi("GET", "/gists/"+state.gist.id));
+    if(!content) return;
+    let remote = null;
+    try{ remote = JSON.parse(content); }
+    catch(e){ toast("Cloud sync: couldn't read cloud data", 4000); return; }
+    if(!remote || !remote.books) return;
+    // safety: never let an empty cloud silently wipe a device with data
+    if(!Object.keys(remote.books).length && Object.keys(state.books).length){ scheduleGistPush(); return; }
+    if((remote.updatedAt||0) > (state.updatedAt||0)){
+      applyingRemote = true;
+      const gist = state.gist;
+      state = remote;
+      state.gist = gist;
+      state.settings = state.settings || {theme:"system"};
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+      applyingRemote = false;
+      applyTheme(); render();
+      toast("Synced from cloud ☁", 2000);
+    } else if((state.updatedAt||0) > (remote.updatedAt||0)){
+      scheduleGistPush();
+    }
+  }catch(e){
+    if(e.message==="auth") toast("Cloud sync: token invalid — reconnect in Settings", 4000);
+  }
+}
+function openSyncSetup(){
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Cloud sync (via GitHub)</h3>
+    <div class="note">Auto-saves your library to a <b>private gist</b> in your own GitHub account, and keeps all your devices in sync. One-time setup:<br><br>
+    1. Create a free account at <b>github.com</b> (if you don't have one).<br>
+    2. Open <b>github.com/settings/personal-access-tokens</b> → Generate new token.<br>
+    3. Any name, expiration <b>No expiration</b>, and under <b>Account permissions → Gists</b> choose <b>Read and write</b>. Generate &amp; copy.<br>
+    4. Paste the token below. Repeat only step 4 on your other devices.</div>
+    <input id="gtoken" class="minput" placeholder="Paste token (github_pat_… or ghp_…)" autocomplete="off">
+    <button class="abtn primary" style="width:100%" onclick="connectGist()">Connect</button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+}
+async function connectGist(){
+  const token = $("#gtoken").value.trim();
+  if(!token) return;
+  state.gist = {token, id:null};
+  toast("Connecting…", 8000);
+  try{
+    const list = await gistApi("GET","/gists?per_page=100");
+    const mine = (list||[]).find(g => g.files && g.files[GIST_FILE]);
+    if(mine){
+      state.gist.id = mine.id;
+      const content = await gistFileContent(await gistApi("GET","/gists/"+mine.id));
+      let remote = null;
+      if(content){
+        try{ remote = JSON.parse(content); }
+        catch(e){ // cloud data exists but is unreadable — do NOT connect (a later push would overwrite it)
+          state.gist = null; save();
+          toast("Couldn't read your cloud data — sync not connected. Try again.", 4500);
+          return;
+        }
+      }
+      if(remote && remote.books){
+        const rn = Object.keys(remote.books).length, ln = Object.keys(state.books).length;
+        if(confirm(`Found cloud data (${rn} books). Load it on this device?\n\nOK = use cloud data here\nCancel = overwrite cloud with this device (${ln} books)`)){
+          applyingRemote = true;
+          const gist = state.gist;
+          state = remote; state.gist = gist;
+          state.settings = state.settings || {theme:"system"};
+          applyingRemote = false;
+        }
+      }
+    } else {
+      const g = await gistApi("POST","/gists",{ description:"Paginia sync data", public:false, files:{ [GIST_FILE]:{ content: JSON.stringify(syncedState()) } } });
+      state.gist.id = g.id;
+    }
+    save();
+    closeModal(); applyTheme(); render();
+    toast("Cloud sync connected ✓", 3000);
+  }catch(e){
+    state.gist = null; save();
+    toast(e.message==="auth" ? "Token rejected — check it has Gists: read & write" : "Connection failed — try again", 4000);
+  }
+}
+function disconnectGist(){
+  if(!confirm("Disconnect cloud sync on this device?\n(Your data stays here, and the gist stays in your GitHub account.)")) return;
+  state.gist = null; save(); openSettings();
+}
+
+/* ---------- derived ---------- */
+function allBooks(){ return Object.values(state.books); }
+function pct(b){
+  if(!b.cur || !b.pages) return null;
+  return Math.max(0, Math.min(100, Math.round(b.cur.page / b.pages * 100)));
+}
+function finishedReads(){
+  // one entry per completed read: {b, start, end}
+  const out = [];
+  for(const b of allBooks())
+    for(const r of (b.reads||[])) out.push({b, start:r.start||null, end:r.end||null});
+  return out;
+}
+function coverImg(b, cls){
+  const ph = `<div class="${cls} ph">${I.book}</div>`;
+  if(!b.cover) return ph;
+  return `<img class="${cls}" src="${esc(b.cover)}" loading="lazy" alt="" onerror="this.outerHTML='${ph.replace(/'/g,"\\'").replace(/"/g,"&quot;")}'">`;
+}
+function starsMini(b){ return b.rating ? `<span class="starmini">★${b.rating}</span>` : ""; }
+
+/* ---------- actions ---------- */
+function startReading(key){
+  const b = state.books[key];
+  if(!b) return;
+  b.status = "reading";
+  if(!b.cur) b.cur = {page:0, start:todayStr(), updatedAt:Date.now()};
+  save(); render();
+  toast(`Started “${b.title}” 📖`);
+}
+function logProgress(b, page){
+  b.log = b.log || [];
+  const t = todayStr();
+  const same = b.log.find(e => e.d === t);
+  if(same) same.p = page; else b.log.push({d:t, p:page});
+}
+function openProgress(key){
+  const b = state.books[key];
+  if(!b) return;
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Update progress</h3>
+    <div class="mlabel">Current page</div>
+    <input id="ppage" class="minput" type="number" inputmode="numeric" min="0" value="${b.cur ? b.cur.page : 0}" oninput="updPct('${key}')">
+    <div class="mlabel">Total pages (this edition)</div>
+    <input id="ptotal" class="minput" type="number" inputmode="numeric" min="1" value="${b.pages || ""}" placeholder="e.g. 320" oninput="updPct('${key}')">
+    <div class="smallmeta" id="ppct" style="text-align:center;font-size:14px;margin:2px 0 12px"></div>
+    <button class="abtn primary" style="width:100%" onclick="saveProgress('${key}')">Save</button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+  updPct(key);
+  $("#ppage").focus(); $("#ppage").select();
+}
+function updPct(){
+  const p = parseInt($("#ppage").value, 10), t = parseInt($("#ptotal").value, 10);
+  const el = $("#ppct");
+  if(!el) return;
+  if(!isNaN(p) && !isNaN(t) && t > 0){
+    const v = Math.max(0, Math.min(100, Math.round(p/t*100)));
+    el.innerHTML = `<b style="color:var(--acc)">${v}%</b> · <span class="pgnum">${Math.max(0, t-p)} pages left</span>`;
+  } else el.textContent = "";
+}
+function saveProgress(key){
+  const b = state.books[key];
+  if(!b) return;
+  const p = parseInt($("#ppage").value, 10), t = parseInt($("#ptotal").value, 10);
+  if(!isNaN(t) && t > 0) b.pages = t;
+  if(!isNaN(p) && p >= 0){
+    if(!b.cur) b.cur = {page:0, start:todayStr(), updatedAt:Date.now()};
+    b.cur.page = Math.min(p, b.pages || p);
+    b.cur.updatedAt = Date.now();
+    logProgress(b, b.cur.page);
+  }
+  save(); closeModal();
+  if(currentSheetKey === key) renderSheet(key); else render();
+}
+let finishRating = 0;
+function openFinish(key){
+  const b = state.books[key];
+  if(!b) return;
+  finishRating = b.rating || 0;
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Finished “${esc(b.title)}”?</h3>
+    <div class="mlabel">Date finished</div>
+    <input id="fdate" class="minput" type="date" value="${todayStr()}">
+    <div class="mlabel">Rating</div>
+    <div class="stars" id="fstars">${[1,2,3,4,5].map(n=>`<button onclick="setFinishStar(${n})" aria-label="${n} stars">${I.star}</button>`).join("")}</div>
+    <button class="abtn primary" style="width:100%;margin-top:14px" onclick="finishBook('${key}')">Mark as read ✓</button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+  paintFinishStars();
+}
+function setFinishStar(n){ finishRating = (finishRating===n) ? 0 : n; paintFinishStars(); }
+function paintFinishStars(){
+  const btns = document.querySelectorAll("#fstars button");
+  btns.forEach((b,i)=>b.classList.toggle("on", i < finishRating));
+}
+function finishBook(key){
+  const b = state.books[key];
+  if(!b) return;
+  const end = $("#fdate").value || null;
+  b.reads = b.reads || [];
+  b.reads.push({start: b.cur ? b.cur.start : null, end});
+  b.status = "read";
+  b.cur = null;
+  if(finishRating) b.rating = finishRating;
+  save(); closeModal();
+  if(currentSheetKey === key) renderSheet(key); else render();
+  toast(`“${b.title}” finished 🎉`);
+}
+function unmarkRead(key, idx){
+  const b = state.books[key];
+  if(!b || !b.reads || !b.reads[idx]) return;
+  const removed = b.reads.splice(idx, 1)[0];
+  const prevStatus = b.status;
+  if(!b.reads.length && b.status === "read") b.status = "to_read";
+  save(); render();
+  toast(`Read removed`, 5000, {label:"Undo", fn:()=>{
+    b.reads.splice(idx, 0, removed); b.status = prevStatus; save(); render();
+  }});
+}
+function setRating(key, n){
+  const b = state.books[key];
+  if(!b) return;
+  b.rating = (b.rating===n) ? 0 : n;
+  save();
+  if(currentSheetKey === key) renderSheet(key); else render();
+}
+function setStatusUi(key, st){
+  const b = state.books[key];
+  if(!b || b.status === st) return;
+  if(st === "read"){ openFinish(key); return; }
+  if(st === "reading"){ startReading(key); if(currentSheetKey===key) renderSheet(key); return; }
+  b.status = st;   // to_read | dnf
+  b.cur = null;
+  save();
+  if(currentSheetKey === key) renderSheet(key); else render();
+}
+function removeBook(key){
+  const b = state.books[key];
+  if(!b) return;
+  if(!confirm(`Remove “${b.title}” from your library?`)) return;
+  delete state.books[key];
+  save(); closeSheet();
+  toast(`“${b.title}” removed`, 5000, {label:"Undo", fn:()=>{ state.books[key] = b; save(); render(); }});
+}
+
+/* ---------- render ---------- */
+function render(){
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("act", b.dataset.tab===tab));
+  const m = $("#main");
+  if(tab==="reading") m.innerHTML = viewReading();
+  else if(tab==="library") m.innerHTML = viewLibrary();
+  else if(tab==="stats") m.innerHTML = viewStats();
+  else if(tab==="search") m.innerHTML = viewSearch();
+  document.querySelectorAll("#main .chips").forEach(row => {
+    const act = row.querySelector && row.querySelector(".chip.act");
+    if(act && row.scrollTo) row.scrollTo({left: act.offsetLeft - (row.clientWidth - act.offsetWidth)/2, behavior:"smooth"});
+  });
+}
+function banners(){
+  let h = "";
+  if(updateAvailable) h += `<div class="note" style="display:flex;gap:10px;align-items:center;border-left:3px solid var(--green)"><span style="flex:1">⬆ <b>Version ${esc(updateAvailable)}</b> is ready.</span><button class="abtn primary" style="flex:0 0 auto;padding:8px 16px" onclick="reloadApp()">Update now</button></div>`;
+  if(state.showWhatsNew) h += `<div class="note" style="display:flex;gap:10px;align-items:center"><span style="flex:1">✨ <b>v${esc(state.showWhatsNew)}:</b> ${esc(WHATS_NEW)}</span><button class="abtn" style="flex:0 0 auto;padding:8px 14px" onclick="dismissWhatsNew()">OK</button></div>`;
+  return h;
+}
+
+/* ---------- Reading tab ---------- */
+function viewReading(){
+  let h = banners();
+  const reading = allBooks().filter(b=>b.status==="reading")
+    .sort((a,b)=>((b.cur&&b.cur.updatedAt)||0)-((a.cur&&a.cur.updatedAt)||0));
+  if(reading.length){
+    h += `<h2 class="sec">Currently reading</h2>`;
+    h += reading.map(readingCard).join("");
+  }
+  const next = allBooks().filter(b=>b.status==="to_read")
+    .sort((a,b)=>(b.dateAdded||"").localeCompare(a.dateAdded||"")).slice(0,5);
+  if(next.length){
+    h += `<h2 class="sec">Up next</h2>`;
+    h += next.map(b=>`
+      <div class="card" onclick="openBook('${b.key}')">
+        ${coverImg(b,"poster")}
+        <div class="info">
+          <div class="title">${esc(b.title)} ${starsMini(b)}</div>
+          <div class="sub">${esc(b.author||"")}</div>
+          <div class="meta">${b.year?b.year+" · ":""}${b.pages?`<span class="pgnum">${b.pages} p.</span>`:""}</div>
+        </div>
+        <button class="abtn primary" style="flex:0 0 auto;padding:10px 16px" onclick="event.stopPropagation();startReading('${b.key}')">Start</button>
+      </div>`).join("");
+  }
+  if(!reading.length && !next.length){
+    h += `<div class="empty"><div class="big">📚</div>Nothing on the go.<br>Find your next book in <b>Search</b>, or import your Goodreads library in Settings.</div>`;
+  }
+  return h;
+}
+function readingCard(b){
+  const p = pct(b);
+  const page = b.cur ? b.cur.page : 0;
+  const left = b.pages ? Math.max(0, b.pages - page) : null;
+  return `
+  <div class="card" onclick="openBook('${b.key}')">
+    ${coverImg(b,"poster")}
+    <div class="info">
+      <div class="title">${esc(b.title)}</div>
+      <div class="sub">${esc(b.author||"")}</div>
+      <div class="progress big"><i style="width:${p||0}%" ${p===100?'class="full"':''}></i></div>
+      <div class="meta"><span class="pgnum">p. ${page}</span>${b.pages?` of <span class="pgnum">${b.pages}</span>`:""}${p!=null?` · ${p}%`:""}${left!=null?` · ${left} left`:""}</div>
+      <button class="abtn" style="margin-top:9px;padding:8px 16px" onclick="event.stopPropagation();openProgress('${b.key}')">Update</button>
+    </div>
+    <div>
+      <button class="check-btn" title="Finished" onclick="event.stopPropagation();openFinish('${b.key}')">${I.check}</button>
+      <div class="left-num">Done?</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- Library tab ---------- */
+let libFilter = "all", libTag = null, libQ = "";
+function viewLibrary(){
+  const q = libQ.trim().toLowerCase();
+  let h = `<div class="searchbar">
+    <div class="inputwrap">
+      <input id="libq" placeholder="Filter your library…" value="${esc(libQ)}" oninput="libQ=this.value;renderKeepFocus('libq')">
+      ${libQ?`<button class="clearbtn" onclick="libQ='';render()">✕</button>`:""}
+    </div>
+  </div>`;
+  const filters = [["all","All"],["reading","Reading"],["read","Read"],["to_read","To read"],["dnf","Unfinished"]];
+  h += `<div class="chips">${filters.map(([k,l])=>
+      `<button class="chip ${libFilter===k?"act":""}" onclick="libFilter='${k}';render()">${l}</button>`).join("")}
+    <button class="chip gold ${libFilter==="history"?"act":""}" onclick="libFilter='history';render()">History</button></div>`;
+  if(libFilter === "history") return h + viewHistory(q);
+  // tag chips by count
+  const tagCount = {};
+  for(const b of allBooks()) for(const t of (b.tags||[])) tagCount[t] = (tagCount[t]||0)+1;
+  const tags = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]);
+  if(tags.length) h += `<div class="chips" style="padding-top:0">${tags.map(([t,n])=>
+    `<button class="chip ${libTag===t?"act":""}" onclick="libTag=${libTag===t?"null":`'${esc(t)}'`};render()">${esc(t)} · ${n}</button>`).join("")}</div>`;
+  let list = allBooks();
+  if(libFilter!=="all") list = list.filter(b=>b.status===libFilter);
+  if(libTag) list = list.filter(b=>(b.tags||[]).includes(libTag));
+  if(q) list = list.filter(b=>(b.title+" "+(b.author||"")).toLowerCase().includes(q));
+  list.sort((a,b)=>a.title.localeCompare(b.title));
+  if(!list.length) return h + `<div class="empty"><div class="big">🔍</div>No books here${q?` for “${esc(libQ)}”`:""}.</div>`;
+  h += `<div class="grid">${list.map(gcell).join("")}</div>`;
+  return h;
+}
+function gcell(b){
+  const p = b.status==="reading" ? pct(b) : null;
+  return `<div class="gcell" onclick="openBook('${b.key}')">
+    ${b.cover
+      ? `<img src="${esc(b.cover)}" loading="lazy" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="gph" style="display:none"><span>${esc(b.title)}</span></div>`
+      : `<div class="gph"><span>${esc(b.title)}</span></div>`}
+    ${b.rating?`<span class="rt">★${b.rating}</span>`:""}
+    ${p!=null?`<div class="gbar" style="bottom:31px"><i style="width:${p}%"></i></div>`:""}
+    <div class="gt">${esc(b.title)}</div>
+  </div>`;
+}
+function viewHistory(q){
+  let rows = [];
+  let undated = 0;
+  for(const b of allBooks()){
+    for(let i=0;i<(b.reads||[]).length;i++){
+      const r = b.reads[i];
+      if(!r.end){ undated++; continue; }
+      rows.push({b, i, end:r.end});
+    }
+  }
+  if(q) rows = rows.filter(r=>(r.b.title+" "+(r.b.author||"")).toLowerCase().includes(q));
+  rows.sort((a,b)=>b.end.localeCompare(a.end));
+  if(!rows.length) return `<div class="empty"><div class="big">🗓</div>No dated reads yet.</div>`;
+  let h = rows.map(r=>`
+    <div class="hrow" onclick="openBook('${r.b.key}')">
+      ${coverImg(r.b,"hposter")}
+      <div class="hinfo">
+        <div class="ht">${esc(r.b.title)} ${starsMini(r.b)}</div>
+        <div class="hs">${esc(r.b.author||"")}</div>
+      </div>
+      <div class="hd">${fmtDate(r.end)}</div>
+      <button class="unmark" title="Remove this read" onclick="event.stopPropagation();unmarkRead('${r.b.key}',${r.i})">${I.x}</button>
+    </div>`).join("");
+  if(undated) h += `<div class="smallmeta" style="text-align:center;margin-top:14px">+ ${undated} finished read${undated>1?"s":""} without a date</div>`;
+  return h;
+}
+
+/* ---------- Stats tab ---------- */
+function viewStats(){
+  const books = allBooks();
+  const read = books.filter(b=>b.status==="read");
+  const reads = finishedReads();
+  const yearNow = String(new Date().getFullYear());
+  const pagesTotal = reads.reduce((s,r)=>s+(r.b.pages||0), 0);
+  const thisYear = reads.filter(r=>r.end && r.end.startsWith(yearNow)).length;
+  const rated = books.filter(b=>b.rating>0);
+  const avg = rated.length ? (rated.reduce((s,b)=>s+b.rating,0)/rated.length).toFixed(1) : "—";
+  let h = `<div class="statgrid">
+    <div class="stat-card"><div class="v">${read.length}</div><div class="l">Books read</div></div>
+    <div class="stat-card"><div class="v">${pagesTotal.toLocaleString()}</div><div class="l">Pages read</div></div>
+    <div class="stat-card"><div class="v">${thisYear}</div><div class="l">This year</div></div>
+    <div class="stat-card"><div class="v">${avg}</div><div class="l">Avg rating · ${rated.length} rated</div></div>
+  </div>`;
+  const barSec = (title, pairs, fmt) => {
+    if(!pairs.length) return "";
+    const max = Math.max(...pairs.map(p=>p[1])) || 1;
+    return `<h2 class="sec">${title}</h2>` + pairs.map(([l,v])=>`
+      <div class="bar-row"><span class="bl">${esc(String(l))}</span>
+        <span class="bt"><i style="width:${Math.round(v/max*100)}%"></i></span>
+        <span class="bv">${fmt?fmt(v):v}</span></div>`).join("");
+  };
+  // per-year
+  const byYear = {}, pgYear = {};
+  let undated = 0;
+  for(const r of reads){
+    if(!r.end){ undated++; continue; }
+    const y = r.end.slice(0,4);
+    byYear[y] = (byYear[y]||0)+1;
+    pgYear[y] = (pgYear[y]||0)+(r.b.pages||0);
+  }
+  const years = Object.keys(byYear).sort().reverse();
+  h += barSec("Books per year", years.map(y=>[y, byYear[y]]));
+  h += barSec("Pages per year", years.map(y=>[y, pgYear[y]]), v=>v.toLocaleString());
+  // rating distribution
+  const dist = [5,4,3,2,1].map(n=>["★".repeat(n), books.filter(b=>b.rating===n).length]);
+  if(dist.some(d=>d[1])) h += barSec("Ratings", dist);
+  // top authors among read
+  const auth = {};
+  for(const b of read) if(b.author) auth[b.author] = (auth[b.author]||0)+1;
+  h += barSec("Top authors", Object.entries(auth).sort((a,b)=>b[1]-a[1]).slice(0,8).filter(a=>a[1]>1));
+  // formats/tags among read
+  const tg = {};
+  for(const b of read) for(const t of (b.tags||[])) tg[t] = (tg[t]||0)+1;
+  h += barSec("Formats & tags (read)", Object.entries(tg).sort((a,b)=>b[1]-a[1]).slice(0,8));
+  // longest books
+  const longest = read.filter(b=>b.pages).sort((a,b)=>b.pages-a.pages).slice(0,5).map(b=>[b.title, b.pages]);
+  h += barSec("Longest books read", longest, v=>v+" p.");
+  if(undated) h += `<div class="smallmeta" style="text-align:center;margin-top:16px">${undated} finished read${undated>1?"s":""} without a date aren't in the per-year bars.</div>`;
+  if(!books.length) h = `<div class="empty"><div class="big">📊</div>Stats appear once you add books.</div>`;
+  return h;
+}
+
+/* ---------- Search tab (Open Library) ---------- */
+let searching = false;
+function viewSearch(){
+  let h = `<div class="searchbar">
+    <div class="inputwrap">
+      <input id="q" placeholder="Search any book…" value="${esc(lastSearchQ)}" onkeydown="if(event.key==='Enter'){this.blur();doSearch()}">
+      ${lastSearchQ?`<button class="clearbtn" onclick="lastSearchQ='';searchResults=[];render()">✕</button>`:""}
+    </div>
+    <button class="icon-btn" onclick="doSearch()">${I.search}</button>
+  </div>`;
+  if(searching) h += `<div class="empty">Searching…</div>`;
+  else if(searchResults.length){
+    h += searchResults.map((d,i)=>{
+      const inLib = d.olk && Object.values(state.books).find(b=>b.olKey===d.olk);
+      return `<div class="card" ${inLib?`onclick="openBook('${inLib.key}')"`:""}>
+        ${d.cover
+          ? `<img class="poster" src="${esc(d.cover)}" loading="lazy" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="poster ph" style="display:none">${I.book}</div>`
+          : `<div class="poster ph">${I.book}</div>`}
+        <div class="info">
+          <div class="title">${esc(d.title)}</div>
+          <div class="sub">${esc(d.author||"")}</div>
+          <div class="meta">${d.year||""}${d.pages?` · <span class="pgnum">${d.pages} p.</span>`:""}</div>
+        </div>
+        ${inLib
+          ? `<span class="starmini" style="flex-shrink:0">✓ In library</span>`
+          : `<button class="abtn primary" style="flex:0 0 auto;padding:10px 16px" onclick="openAddModal(${i})">Add</button>`}
+      </div>`;
+    }).join("");
+  } else if(lastSearchQ) h += `<div class="empty"><div class="big">🤷</div>Nothing found for “${esc(lastSearchQ)}”.</div>`;
+  else h += `<div class="empty"><div class="big">📖</div>Search millions of books<br>via Open Library.</div>`;
+  h += `<button class="abtn" style="width:100%;margin-top:16px" onclick="openManualAdd()">Can't find it? Add manually</button>`;
+  return h;
+}
+async function doSearch(){
+  const q = $("#q").value.trim();
+  if(!q) return;
+  lastSearchQ = q;
+  searching = true; render();
+  try{
+    const r = await fetch(OL+"/search.json?q="+encodeURIComponent(q)+"&limit=20&fields=key,title,author_name,first_publish_year,cover_i,number_of_pages_median");
+    const j = await r.json();
+    searchResults = (j.docs||[]).map(d=>({
+      olk: (d.key||"").split("/").pop() || null,     // "OL45804W"
+      title: d.title || "Untitled",
+      author: (d.author_name||[])[0] || "",
+      year: d.first_publish_year || null,
+      pages: d.number_of_pages_median || null,
+      cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : null,
+    }));
+  }catch(e){ searchResults = []; toast("Search failed — check your connection"); }
+  searching = false; render();
+}
+function openAddModal(i){
+  const d = searchResults[i];
+  if(!d) return;
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Add “${esc(d.title)}”</h3>
+    <button class="mrow" onclick="addFromSearch(${i},'to_read')">${I.book}To read<span class="md">save it for later</span></button>
+    <button class="mrow" onclick="addFromSearch(${i},'reading')">${I.play}Reading<span class="md">I'm reading it now</span></button>
+    <button class="mrow" onclick="addFromSearch(${i},'read')">${I.check}Read<span class="md">I've finished it</span></button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+}
+function addFromSearch(i, st){
+  const d = searchResults[i];
+  if(!d) return;
+  const key = d.olk ? "ol"+d.olk : "m"+Date.now();
+  if(state.books[key]){ closeModal(); openBook(key); return; }
+  const b = {
+    key, olKey:d.olk, title:d.title, author:d.author, cover:d.cover, isbn:null,
+    year:d.year, pages:d.pages, status:st, rating:0, tags:[],
+    dateAdded:todayStr(), reads:[], cur:null, log:[],
+  };
+  if(st==="reading") b.cur = {page:0, start:todayStr(), updatedAt:Date.now()};
+  state.books[key] = b;
+  save(); closeModal(); render();
+  if(st==="read"){ openBook(key); openFinish(key); }
+  else toast(`“${b.title}” added ✓`, 3500, {label:"Open", fn:()=>openBook(key)});
+}
+function openManualAdd(){
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Add a book manually</h3>
+    <div class="mlabel">Title</div>
+    <input id="mtitle" class="minput" placeholder="Book title">
+    <div class="mlabel">Author</div>
+    <input id="mauthor" class="minput" placeholder="Author">
+    <div class="mlabel">Pages (optional)</div>
+    <input id="mpages" class="minput" type="number" inputmode="numeric" min="1" placeholder="e.g. 320">
+    <button class="abtn primary" style="width:100%" onclick="addManual()">Add to library</button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+  $("#mtitle").focus();
+}
+function addManual(){
+  const title = $("#mtitle").value.trim();
+  if(!title){ toast("Give it a title"); return; }
+  const key = "m"+Date.now();
+  state.books[key] = {
+    key, olKey:null, title, author:$("#mauthor").value.trim(), cover:null, isbn:null,
+    year:null, pages:parseInt($("#mpages").value,10)||null, status:"to_read",
+    rating:0, tags:[], dateAdded:todayStr(), reads:[], cur:null, log:[],
+  };
+  save(); closeModal(); render();
+  toast(`“${title}” added ✓`, 3500, {label:"Open", fn:()=>openBook(key)});
+}
+
+/* ---------- book sheet ---------- */
+let listScroll = 0;
+function openBook(key){
+  const b = state.books[key];
+  if(!b) return;
+  listScroll = window.scrollY || 0;
+  currentSheetKey = key;
+  renderSheet(key);
+  $("#sheet").classList.remove("hidden");
+  window.scrollTo(0,0);
+}
+function closeSheet(){ $("#sheet").classList.add("hidden"); currentSheetKey = null; render(); window.scrollTo(0, listScroll); }
+function renderSheet(key){
+  const b = state.books[key];
+  if(!b){ closeSheet(); return; }
+  const p = pct(b);
+  const readsHtml = (b.reads||[]).map((r,i)=>`
+    <div class="readrow">
+      <span class="rn">#${i+1}</span>
+      <span class="rd">${r.start?`${fmtDate(r.start)} → `:""}${r.end?`<b>${fmtDate(r.end)}</b>`:"<b>no date</b>"}</span>
+      <button class="unmark" style="border:none;color:var(--tx2);font-size:13px" title="Edit" onclick="openEditRead('${key}',${i})">✎</button>
+      <button class="unmark" title="Delete" onclick="unmarkReadSheet('${key}',${i})">${I.x}</button>
+    </div>`).join("");
+  $("#sheet").innerHTML = `
+  <div class="hero">
+    ${b.cover?`<div class="hbg" style="background-image:url('${esc(b.cover)}')"></div>`:`<div class="hbg" style="background:var(--grad);opacity:.35"></div>`}
+    <div class="hgrad"></div>
+    <button class="icon-btn hback" onclick="closeSheet()">${I.back}</button>
+  </div>
+  <div class="dwrap">
+    <div class="dtop">
+      ${b.cover
+        ? `<img src="${esc(b.cover)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="dph" style="display:none"><span>${esc(b.title)}</span></div>`
+        : `<div class="dph"><span>${esc(b.title)}</span></div>`}
+      <div class="dhead">
+        <div class="dtitle">${esc(b.title)}</div>
+        <div class="dmeta">${esc(b.author||"")}<br>
+          <u onclick="openEditMeta('${key}')">${b.year||"year?"} · ${b.pages?b.pages+" pages":"pages?"}</u></div>
+      </div>
+    </div>
+    ${b.status==="reading"?`
+    <div class="dprog">
+      <div class="dpr"><span>Progress</span><b>p. ${b.cur?b.cur.page:0}${b.pages?" / "+b.pages:""}</b><span>${p!=null?p+"%":""}</span></div>
+      <div class="progress big" style="margin-top:9px"><i style="width:${p||0}%"></i></div>
+      ${b.cur&&b.cur.start?`<div class="smallmeta" style="margin:8px 0 0">Started ${fmtDate(b.cur.start)}</div>`:""}
+    </div>
+    <div class="actions" style="margin-top:11px">
+      <button class="abtn primary" onclick="openProgress('${key}')">Update progress</button>
+      <button class="abtn" onclick="openFinish('${key}')">Finished ✓</button>
+    </div>`:""}
+    <div class="statusrow">
+      ${Object.entries(STATUSES).map(([k,v])=>
+        `<button class="chip ${b.status===k?"act":""}" onclick="setStatusUi('${key}','${k}')">${v.label}</button>`).join("")}
+    </div>
+    <h2 class="sec">Rating</h2>
+    <div class="stars">${[1,2,3,4,5].map(n=>
+      `<button class="${b.rating>=n?"on":""}" onclick="setRating('${key}',${n})" aria-label="${n} stars">${I.star}</button>`).join("")}</div>
+    <h2 class="sec">Tags</h2>
+    <div class="tagrow">
+      ${(b.tags||[]).map(t=>`<button class="tagchip" onclick="removeTag('${key}','${esc(t)}')">${esc(t)} ✕</button>`).join("")}
+      <button class="tagchip add" onclick="openAddTag('${key}')">+ tag</button>
+    </div>
+    <h2 class="sec">Reading history</h2>
+    ${(b.reads||[]).length?`<div class="readbox">${readsHtml}</div>`:`<div class="smallmeta">No finished reads yet.</div>`}
+    <button class="abtn" style="width:100%;margin-bottom:18px" onclick="openEditRead('${key}',-1)">+ Add read</button>
+    <h2 class="sec">More</h2>
+    <button class="abtn" style="width:100%;margin-bottom:9px" onclick="openMatch('${key}')">${b.olKey?"Re-match":"Match"} on Open Library</button>
+    ${b.olKey?`<a class="abtn" style="width:100%;display:block;text-decoration:none;margin-bottom:9px" href="${OL}/works/${esc(b.olKey)}" target="_blank" rel="noopener">Open Library page ↗</a>`:""}
+    <button class="abtn" style="width:100%;color:var(--red)" onclick="removeBook('${key}')">Remove from library</button>
+    <div class="smallmeta" style="text-align:center;margin-top:14px">Added ${fmtDate(b.dateAdded)}</div>
+  </div>`;
+}
+function unmarkReadSheet(key, idx){
+  const b = state.books[key];
+  if(!b || !b.reads[idx]) return;
+  if(!confirm("Delete this read?")) return;
+  b.reads.splice(idx,1);
+  if(!b.reads.length && b.status==="read") b.status = "to_read";
+  save(); renderSheet(key);
+}
+function openEditRead(key, idx){
+  const b = state.books[key];
+  if(!b) return;
+  const r = idx>=0 ? b.reads[idx] : {start:null, end:todayStr()};
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>${idx>=0?"Edit read":"Add read"}</h3>
+    <div class="mlabel">Started (optional)</div>
+    <input id="rstart" class="minput" type="date" value="${r.start||""}">
+    <div class="mlabel">Finished</div>
+    <input id="rend" class="minput" type="date" value="${r.end||""}">
+    <button class="abtn primary" style="width:100%" onclick="saveRead('${key}',${idx})">Save</button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+}
+function saveRead(key, idx){
+  const b = state.books[key];
+  if(!b) return;
+  const entry = {start:$("#rstart").value||null, end:$("#rend").value||null};
+  b.reads = b.reads || [];
+  if(idx>=0) b.reads[idx] = entry; else b.reads.push(entry);
+  b.reads.sort((a,c)=>String(a.end||"9999").localeCompare(String(c.end||"9999")));
+  if(b.status==="to_read" && b.reads.length) b.status = "read";
+  save(); closeModal(); renderSheet(key);
+}
+function openEditMeta(key){
+  const b = state.books[key];
+  if(!b) return;
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Edit details</h3>
+    <div class="mlabel">Total pages (this edition)</div>
+    <input id="epages" class="minput" type="number" inputmode="numeric" min="1" value="${b.pages||""}" placeholder="e.g. 320">
+    <div class="mlabel">First published (year)</div>
+    <input id="eyear" class="minput" type="number" inputmode="numeric" value="${b.year||""}" placeholder="e.g. 1997">
+    <button class="abtn primary" style="width:100%" onclick="saveMeta('${key}')">Save</button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+}
+function saveMeta(key){
+  const b = state.books[key];
+  if(!b) return;
+  b.pages = parseInt($("#epages").value,10)||null;
+  b.year = parseInt($("#eyear").value,10)||null;
+  save(); closeModal(); renderSheet(key);
+}
+function removeTag(key, t){
+  const b = state.books[key];
+  if(!b) return;
+  if(!confirm(`Remove tag “${t}”?`)) return;
+  b.tags = (b.tags||[]).filter(x=>x!==t);
+  save(); renderSheet(key);
+}
+function openAddTag(key){
+  const b = state.books[key];
+  if(!b) return;
+  const all = {};
+  for(const x of allBooks()) for(const t of (x.tags||[])) all[t] = (all[t]||0)+1;
+  const sug = Object.entries(all).sort((a,c)=>c[1]-a[1]).map(e=>e[0])
+    .filter(t=>!(b.tags||[]).includes(t)).slice(0,10);
+  const base = ["audiobook","ebook","physical"].filter(t=>!sug.includes(t)&&!(b.tags||[]).includes(t));
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Add tag</h3>
+    <input id="ntag" class="minput" placeholder="e.g. audiobook, non-fiction…" onkeydown="if(event.key==='Enter')addTag('${key}')">
+    <div class="tagrow">${sug.concat(base).map(t=>`<button class="tagchip" onclick="addTagVal('${key}','${esc(t)}')">${esc(t)}</button>`).join("")}</div>
+    <button class="abtn primary" style="width:100%;margin-top:12px" onclick="addTag('${key}')">Add</button>
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+  $("#ntag").focus();
+}
+function addTag(key){ addTagVal(key, $("#ntag").value); }
+function addTagVal(key, t){
+  const b = state.books[key];
+  t = String(t||"").trim().toLowerCase();
+  if(!b || !t) return;
+  b.tags = b.tags || [];
+  if(!b.tags.includes(t)) b.tags.push(t);
+  save(); closeModal(); renderSheet(key);
+}
+
+/* ---------- match on Open Library ---------- */
+async function openMatch(key){
+  const b = state.books[key];
+  if(!b) return;
+  $("#modal").innerHTML = `<div class="mbox"><h3>Matching…</h3><div class="smallmeta">Searching Open Library for “${esc(b.title)}”</div></div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+  let docs = [];
+  try{
+    const q = b.title + (b.author ? " " + b.author : "");
+    const r = await fetch(OL+"/search.json?q="+encodeURIComponent(q)+"&limit=8&fields=key,title,author_name,first_publish_year,cover_i,number_of_pages_median");
+    docs = (await r.json()).docs || [];
+  }catch(e){ toast("Search failed — check your connection"); closeModal(); return; }
+  matchDocs = docs;
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Match “${esc(b.title)}”</h3>
+    ${docs.length ? docs.map((d,i)=>`
+      <button class="mrow" onclick="pickMatch('${key}',${i})">
+        ${d.cover_i?`<img src="https://covers.openlibrary.org/b/id/${d.cover_i}-S.jpg" style="width:28px;height:42px;object-fit:cover;border-radius:5px" alt="">`:I.book}
+        <span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.title)}</span>
+        <span class="md" style="display:block;text-align:left;margin:0">${esc((d.author_name||[])[0]||"")} ${d.first_publish_year?"· "+d.first_publish_year:""}</span></span>
+      </button>`).join("") : `<div class="smallmeta">No results.</div>`}
+  </div>`;
+}
+let matchDocs = [];
+function pickMatch(key, i){
+  const b = state.books[key], d = matchDocs[i];
+  if(!b || !d) return;
+  b.olKey = (d.key||"").split("/").pop() || b.olKey;
+  if(d.cover_i) b.cover = `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`;
+  if(!b.pages && d.number_of_pages_median) b.pages = d.number_of_pages_median;
+  if(!b.year && d.first_publish_year) b.year = d.first_publish_year;
+  save(); closeModal(); renderSheet(key);
+  toast("Matched ✓");
+}
+
+/* ---------- settings / backup / import ---------- */
+function openSettings(){
+  const kb = Math.round((localStorage.getItem(LS_KEY)||"").length/1024);
+  const themeLabel = {system:"System", dark:"Dark", light:"Light"}[state.settings.theme] || "System";
+  const gistOn = state.gist && state.gist.token;
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Settings</h3>
+    <button class="mrow" onclick="openThemePicker()">${I.moon}Theme<span class="md">${themeLabel} ›</span></button>
+    ${gistOn
+      ? `<button class="mrow" onclick="disconnectGist()">${I.cloud}Cloud sync: on ✓<span class="md">${state.gist.lastPush?"saved "+agoStr(state.gist.lastPush):"tap to disconnect"}</span></button>`
+      : `<button class="mrow" onclick="openSyncSetup()">${I.cloud}Set up cloud sync<span class="md">recommended</span></button>`}
+    <button class="mrow" onclick="exportBackup()">${I.down}Export backup (JSON)<span class="md">${kb} KB</span></button>
+    <button class="mrow" onclick="document.getElementById('imp').click()">${I.up}Import backup / Goodreads CSV<span class="md">.json / .csv</span></button>
+    <button class="mrow" style="color:var(--red)" onclick="resetAll()">${I.trash}Reset all data</button>
+    <div class="note" style="margin-top:14px">${gistOn?"Cloud sync is on: your library auto-saves to your private gist and follows you across devices.":"Your data lives only in this browser, on this device. Set up cloud sync (or export backups) so you never lose progress."} Import accepts a Paginia backup <b>.json</b> or your <b>Goodreads library export</b> (goodreads.com → My Books → Import/Export → Export).<div style="margin-top:8px;color:var(--tx3);font-size:11.5px">Paginia v${APP_VERSION}</div></div>
+    <input type="file" id="imp" accept=".json,.csv,application/json,text/csv" class="hidden" onchange="importFile(this.files[0])">
+  </div>`;
+  $("#modal").classList.remove("hidden");
+  $("#modal").onclick = closeModal;
+}
+function closeModal(){ $("#modal").classList.add("hidden"); }
+function exportBackup(){
+  const blob = new Blob([JSON.stringify({app:"paginia", version:APP_VERSION, exportedAt:new Date().toISOString(), state:syncedState()})], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "paginia-backup-"+todayStr()+".json";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+}
+function importFile(file){
+  if(!file) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    const txt = fr.result;
+    if(/^﻿?Book Id,/.test(txt) || /(^|\n)Book Id,Title,Author/.test(txt.slice(0,400))){ importGoodreads(txt); return; }
+    try{
+      let s = JSON.parse(txt);
+      if(s.app==="paginia" && s.state) s = s.state;   // wrapper format
+      if(!s.books) throw 0;
+      const gist = state.gist;              // keep this device's sync connection
+      state = s;
+      if(gist) state.gist = gist;
+      state.settings = state.settings || {theme:"system"};
+      save(); closeModal(); applyTheme(); render();
+      toast("Backup imported ✓");
+    }catch(e){ toast("Not a valid Paginia backup or Goodreads CSV"); }
+  };
+  fr.readAsText(file);
+}
+function resetAll(){
+  if(!confirm("Delete ALL data on this device? Export a backup first!")) return;
+  localStorage.removeItem(LS_KEY);
+  location.reload();
+}
+
+/* ---------- Goodreads CSV import ---------- */
+function parseCSV(text){
+  if(text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = []; let i = 0, field = "", row = [], inq = false;
+  while(i < text.length){
+    const c = text[i];
+    if(inq){
+      if(c === '"'){ if(text[i+1] === '"'){ field += '"'; i += 2; continue; } inq = false; i++; continue; }
+      field += c; i++; continue;
+    }
+    if(c === '"'){ inq = true; i++; continue; }
+    if(c === ','){ row.push(field); field = ""; i++; continue; }
+    if(c === '\r'){ i++; continue; }
+    if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+    field += c; i++;
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  if(!rows.length) return [];
+  const head = rows[0].map(h => h.trim());
+  const out = [];
+  for(let r = 1; r < rows.length; r++){
+    if(rows[r].length === 1 && rows[r][0] === "") continue;
+    const o = {}; for(let c = 0; c < head.length; c++) o[head[c]] = rows[r][c] !== undefined ? rows[r][c] : "";
+    out.push(o);
+  }
+  return out;
+}
+function grDate(s){
+  s = (s||"").trim();
+  const m = s.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  return m ? m[1]+"-"+m[2]+"-"+m[3] : null;
+}
+function grBook(r){
+  const grId = (r["Book Id"]||"").trim();
+  if(!grId) return null;
+  const shelf = (r["Exclusive Shelf"]||"").trim();
+  // tags from Bookshelves (minus exclusive shelves); "audio" → "audiobook"; "unfinished" → status dnf
+  const EXCL = {"read":1,"currently-reading":1,"to-read":1};
+  let dnf = false;
+  const tags = [];
+  for(let t of (r["Bookshelves"]||"").split(",")){
+    t = t.trim().toLowerCase();
+    if(!t || EXCL[t]) continue;
+    if(t==="audio") t = "audiobook";
+    if(t==="unfinished"){ dnf = true; continue; }
+    if(!tags.includes(t)) tags.push(t);
+  }
+  // format fallback from Binding only if no format tag yet
+  const hasFormat = tags.some(t=>["audiobook","ebook","physical"].includes(t));
+  const binding = (r["Binding"]||"").toLowerCase();
+  if(!hasFormat && binding){
+    if(binding.includes("audio")) tags.push("audiobook");
+    else if(/kindle|ebook|digital/.test(binding)) tags.push("ebook");
+    else tags.push("physical");
+  }
+  let status = dnf ? "dnf" : (shelf==="read" ? "read" : shelf==="currently-reading" ? "reading" : "to_read");
+  const isbn = ((r["ISBN13"]||"").replace(/\D/g,"")) || null;
+  const pages = parseInt(r["Number of Pages"],10) || null;
+  const year = parseInt(r["Original Publication Year"],10) || parseInt(r["Year Published"],10) || null;
+  const dateRead = grDate(r["Date Read"]);
+  const reads = [];
+  if(shelf==="read" && !dnf){
+    const n = Math.max(1, parseInt(r["Read Count"],10)||1);
+    for(let i=0;i<n;i++) reads.push({start:null, end: i===n-1 ? dateRead : null});
+  }
+  return {
+    key: "gr"+grId, grId, olKey:null,
+    title: (r["Title"]||"Untitled").trim(),
+    author: (r["Author"]||"").trim(),
+    cover: isbn ? `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg` : null,
+    isbn, year, pages, status,
+    rating: Math.round(parseFloat(r["My Rating"])||0),
+    tags, dateAdded: grDate(r["Date Added"]) || todayStr(),
+    reads, cur: status==="reading" ? {page:0, start:null, updatedAt:Date.now()} : null,
+    log: [],
+  };
+}
+function importGoodreads(txt){
+  const rows = parseCSV(txt);
+  if(!rows.length || !("Book Id" in rows[0])){ toast("That doesn't look like a Goodreads export"); return; }
+  let added = 0, skipped = 0;
+  for(const r of rows){
+    const b = grBook(r);
+    if(!b) continue;
+    if(state.books[b.key]){ skipped++; continue; }
+    state.books[b.key] = b;
+    added++;
+  }
+  save(); closeModal(); render();
+  toast(`${added} books imported ✓${skipped?` (${skipped} already in library)`:""}`, 3500);
+}
+
+/* ---------- boot ---------- */
+load();
+applyTheme();
+versionCheck();
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  tab = b.dataset.tab; window.scrollTo(0,0); render();
+});
+$("#btn-settings").onclick = openSettings;
+render();
+if(state.gist && state.gist.token) gistPull();
+setTimeout(checkAppUpdate, 1500);
+
+</script>
+</body>
+</html>
+<!--PAGINIA-EOF-->

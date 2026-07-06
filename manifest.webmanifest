@@ -1,0 +1,12 @@
+{
+  "name": "Paginia",
+  "short_name": "Paginia",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0a0c11",
+  "theme_color": "#0a0c11",
+  "icons": [
+    { "src": "icon-192-v1.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512-v1.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
