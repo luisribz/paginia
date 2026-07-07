@@ -325,9 +325,9 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <script>
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
-/* v1.3.0 */
-const APP_VERSION = "1.3.0";
-const WHATS_NEW = "Much more accurate covers: exact ISBN matching, stricter search scoring, and a Google Books fallback. Run Settings \u2192 Improve covers & matches once more to clean up your library.";
+/* v1.3.1 */
+const APP_VERSION = "1.3.1";
+const WHATS_NEW = "\u201CMatch on Open Library\u201D is now a real search: edit the query, search again, and tap the right edition to pair it \u2014 handy when Open Library uses a shorter title than Goodreads.";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
@@ -1295,39 +1295,56 @@ function addTagVal(key, t){
   save(); closeModal(); renderSheet(key);
 }
 
-/* ---------- match on Open Library ---------- */
-async function openMatch(key){
+/* ---------- match on Open Library (searchable) ---------- */
+let matchDocs = [], matchKey = null;
+function openMatch(key){
   const b = state.books[key];
   if(!b) return;
-  $("#modal").innerHTML = `<div class="mbox"><h3>Matching…</h3><div class="smallmeta">Searching Open Library for “${esc(b.title)}”</div></div>`;
+  matchKey = key;
+  matchDocs = [];
+  const q = b.title.split(/[:(]/)[0].trim() + " " + (b.author||"").split(",")[0].trim();
+  renderMatch(q.trim(), true);
+  runMatchSearch();
+}
+function renderMatch(q, searching){
+  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
+    <h3>Match on Open Library</h3>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input id="mq" class="minput" style="margin:0;flex:1" value="${esc(q)}" placeholder="Search Open Library…" autocomplete="off" onkeydown="if(event.key==='Enter'){this.blur();runMatchSearch()}">
+      <button class="abtn primary" style="flex:0 0 auto" onclick="runMatchSearch()">${I.search}</button>
+    </div>
+    ${searching ? `<div class="smallmeta" style="padding:14px 2px">Searching…</div>`
+      : matchDocs.length ? matchDocs.map((d,i)=>`
+        <button class="mrow" onclick="pickMatch('${matchKey}',${i})">
+          ${d.cover_i?`<img src="https://covers.openlibrary.org/b/id/${d.cover_i}-S.jpg" style="width:28px;height:42px;object-fit:cover;border-radius:5px;flex-shrink:0" alt="">`:I.book}
+          <span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.title)}</span>
+          <span class="md" style="display:block;text-align:left;margin:0">${esc((d.author_name||[])[0]||"")}${d.first_publish_year?" · "+d.first_publish_year:""}${d.edition_count?" · "+d.edition_count+" ed.":""}</span></span>
+        </button>`).join("")
+      : `<div class="smallmeta" style="padding:10px 2px">No results — try fewer words (e.g. drop the subtitle) or a different spelling.</div>`}
+  </div>`;
   $("#modal").classList.remove("hidden");
   $("#modal").onclick = closeModal;
-  let docs = [];
-  try{
-    const q = b.title + (b.author ? " " + b.author : "");
-    const r = await fetch(OL+"/search.json?q="+encodeURIComponent(q)+"&limit=8&fields=key,title,author_name,first_publish_year,cover_i,number_of_pages_median");
-    docs = (await r.json()).docs || [];
-  }catch(e){ toast("Search failed — check your connection"); closeModal(); return; }
-  matchDocs = docs;
-  $("#modal").innerHTML = `<div class="mbox" onclick="event.stopPropagation()">
-    <h3>Match “${esc(b.title)}”</h3>
-    ${docs.length ? docs.map((d,i)=>`
-      <button class="mrow" onclick="pickMatch('${key}',${i})">
-        ${d.cover_i?`<img src="https://covers.openlibrary.org/b/id/${d.cover_i}-S.jpg" style="width:28px;height:42px;object-fit:cover;border-radius:5px" alt="">`:I.book}
-        <span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.title)}</span>
-        <span class="md" style="display:block;text-align:left;margin:0">${esc((d.author_name||[])[0]||"")} ${d.first_publish_year?"· "+d.first_publish_year:""}</span></span>
-      </button>`).join("") : `<div class="smallmeta">No results.</div>`}
-  </div>`;
 }
-let matchDocs = [];
+async function runMatchSearch(){
+  const el = document.getElementById("mq");
+  const q = ((el && el.value) || "").trim();
+  if(!q) return;
+  renderMatch(q, true);
+  try{
+    const r = await fetch(OL+"/search.json?q="+encodeURIComponent(q)+"&limit=10&fields="+OL_FIELDS);
+    matchDocs = (await r.json()).docs || [];
+  }catch(e){ matchDocs = []; toast("Search failed — check your connection"); }
+  renderMatch(q, false);
+}
 function pickMatch(key, i){
   const b = state.books[key], d = matchDocs[i];
   if(!b || !d) return;
   b.olKey = (d.key||"").split("/").pop() || b.olKey;
-  if(d.cover_i) b.cover = `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`;
+  if(d.cover_i) b.cover = cvId(d.cover_i);          // manual pick is authoritative — always take this cover
   if(!b.pages && d.number_of_pages_median) b.pages = d.number_of_pages_median;
   if(!b.year && d.first_publish_year) b.year = d.first_publish_year;
   save(); closeModal(); renderSheet(key);
+  loadDesc(key);
   toast("Matched ✓");
 }
 
