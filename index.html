@@ -325,9 +325,9 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <script>
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
-/* v1.3.1 */
-const APP_VERSION = "1.3.1";
-const WHATS_NEW = "\u201CMatch on Open Library\u201D is now a real search: edit the query, search again, and tap the right edition to pair it \u2014 handy when Open Library uses a shorter title than Goodreads.";
+/* v1.4.0 */
+const APP_VERSION = "1.4.0";
+const WHATS_NEW = "Tap an author\u2019s name (book page or search preview) to see everything you have by them \u2014 plus the rest of their books from Open Library, ready to add.";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
@@ -1027,8 +1027,9 @@ function openAddModal(i){
   $("#modal").classList.remove("hidden");
   $("#modal").onclick = closeModal;
 }
-function addFromSearch(i, st, open){
-  const d = searchResults[i];
+function addFromSearch(i, st, open){ addDoc(searchResults[i], st, open); }
+function addFromPreview(st){ addDoc(previewDoc, st, true); }
+function addDoc(d, st, open){
   if(!d) return;
   const key = d.olk ? "ol"+d.olk : "m"+Date.now();
   if(state.books[key]){ closeModal(); openBook(key); return; }
@@ -1040,7 +1041,7 @@ function addFromSearch(i, st, open){
   if(st==="reading") b.cur = {page:0, start:todayStr(), updatedAt:Date.now()};
   state.books[key] = b;
   save(); closeModal(); render();
-  if(open){ previewIdx = null; openBook(key); if(st==="read") openFinish(key); }
+  if(open){ previewDoc = null; openBook(key); if(st==="read") openFinish(key); }
   else if(st==="read"){ openBook(key); openFinish(key); }
   else toast(`“${b.title}” added ✓`, 3500, {label:"Open", fn:()=>openBook(key)});
 }
@@ -1073,23 +1074,23 @@ function addManual(){
 }
 
 /* ---------- search preview sheet ---------- */
-let previewIdx = null;
-function openSearchPreview(i){
-  const d = searchResults[i];
+let previewDoc = null;
+function openSearchPreview(i){ openPreviewDoc(searchResults[i]); }
+function openPreviewDoc(d){
   if(!d) return;
   const inLib = d.olk && Object.values(state.books).find(b=>b.olKey===d.olk);
   if(inLib){ openBook(inLib.key); return; }
-  previewIdx = i;
+  if(currentSheetKey === null && authorName === null) listScroll = window.scrollY || 0;
+  previewDoc = d;
   descOpen = false;
-  listScroll = window.scrollY || 0;
   currentSheetKey = null;
   renderPreview();
   $("#sheet").classList.remove("hidden");
   window.scrollTo(0,0);
-  if(d.olk) fetchDesc(d.olk).then(()=>{ if(previewIdx === i) renderPreview(); });
+  if(d.olk) fetchDesc(d.olk).then(()=>{ if(previewDoc === d) renderPreview(); });
 }
 function renderPreview(){
-  const d = searchResults[previewIdx];
+  const d = previewDoc;
   if(!d){ closeSheet(); return; }
   let descPart = "";
   if(d.olk){
@@ -1115,17 +1116,82 @@ function renderPreview(){
         : `<div class="dph"><span>${esc(d.title)}</span></div>`}
       <div class="dhead">
         <div class="dtitle">${esc(d.title)}</div>
-        <div class="dmeta">${esc(d.author||"")}<br>${d.year||""}${d.pages?` · <span class="pgnum">${d.pages} pages</span>`:""}</div>
+        <div class="dmeta">${d.author?`<u onclick="openAuthor(previewDoc.author)">${esc(d.author)}</u>`:""}<br>${d.year||""}${d.pages?` · <span class="pgnum">${d.pages} pages</span>`:""}</div>
       </div>
     </div>
     ${descPart}
     <h2 class="sec">Add to library</h2>
     <div class="actions">
-      <button class="abtn" onclick="addFromSearch(${previewIdx},'to_read',true)">To read</button>
-      <button class="abtn" onclick="addFromSearch(${previewIdx},'reading',true)">Reading</button>
-      <button class="abtn primary" onclick="addFromSearch(${previewIdx},'read',true)">Read ✓</button>
+      <button class="abtn" onclick="addFromPreview('to_read')">To read</button>
+      <button class="abtn" onclick="addFromPreview('reading')">Reading</button>
+      <button class="abtn primary" onclick="addFromPreview('read')">Read ✓</button>
     </div>
     ${d.olk?`<a class="abtn" style="width:100%;display:block;text-decoration:none;margin-top:4px" href="${OL}/works/${esc(d.olk)}" target="_blank" rel="noopener">Open Library page ↗</a>`:""}
+  </div>`;
+}
+
+/* ---------- author page ---------- */
+let authorName = null, authorDocs = null;
+function openAuthorOf(key){ const b = state.books[key]; if(b && b.author) openAuthor(b.author); }
+function openAuthor(name){
+  if(!name) return;
+  if(currentSheetKey === null && previewDoc === null && authorName === null) listScroll = window.scrollY || 0;
+  authorName = name; authorDocs = null;
+  currentSheetKey = null; previewDoc = null;
+  renderAuthor();
+  $("#sheet").classList.remove("hidden");
+  window.scrollTo(0,0);
+  loadAuthorBooks(name);
+}
+async function loadAuthorBooks(name){
+  try{
+    const r = await fetch(OL+"/search.json?author="+encodeURIComponent(name)+"&limit=24&fields="+OL_FIELDS);
+    const docs = (await r.json()).docs || [];
+    if(authorName === name){ authorDocs = docs; renderAuthor(); }
+  }catch(e){ if(authorName === name){ authorDocs = []; renderAuthor(); } }
+}
+function openAuthorBook(i){
+  const d = (authorDocs||[])[i];
+  if(!d) return;
+  openPreviewDoc({olk:(d.key||"").split("/").pop()||null, title:d.title||"Untitled",
+    author:(d.author_name||[])[0]||authorName, year:d.first_publish_year||null,
+    pages:d.number_of_pages_median||null, cover:d.cover_i?cvId(d.cover_i):null});
+}
+function renderAuthor(){
+  const name = authorName;
+  const mine = allBooks().filter(b=>normT(b.author)===normT(name)).sort((a,b)=>a.title.localeCompare(b.title));
+  const mineOl = new Set(mine.map(b=>b.olKey).filter(Boolean));
+  const mineT = new Set(mine.map(b=>normT(b.title.split(/[:(]/)[0])));
+  const rows = [];
+  (authorDocs||[]).forEach((d,i)=>{
+    const k = (d.key||"").split("/").pop();
+    const dt = normT(d.title||"");
+    if(mineOl.has(k) || mineT.has(dt) || BAD_TITLE.test(dt)) return;
+    rows.push([d,i]);
+  });
+  $("#sheet").innerHTML = `
+  <div class="hero" style="height:130px">
+    <div class="hbg" style="background:var(--grad);opacity:.3"></div>
+    <div class="hgrad"></div>
+    <button class="icon-btn hback" onclick="closeSheet()">${I.back}</button>
+  </div>
+  <div class="dwrap" style="margin-top:-44px;position:relative;z-index:2">
+    <div class="dtitle" style="font-size:22px">${esc(name)}</div>
+    <h2 class="sec">In your library · ${mine.length}</h2>
+    ${mine.length?`<div class="grid">${mine.map(gcell).join("")}</div>`:`<div class="smallmeta">No books by ${esc(name)} in your library yet.</div>`}
+    <h2 class="sec">More on Open Library</h2>
+    ${authorDocs===null?`<div class="smallmeta">Loading…</div>`
+      : rows.length? rows.slice(0,20).map(([d,i])=>`
+      <div class="card" onclick="openAuthorBook(${i})">
+        ${d.cover_i
+          ? `<img class="poster" src="${cvId(d.cover_i)}" loading="lazy" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="poster ph" style="display:none">${I.book}</div>`
+          : `<div class="poster ph">${I.book}</div>`}
+        <div class="info">
+          <div class="title">${esc(d.title)}</div>
+          <div class="meta">${d.first_publish_year||""}${d.edition_count?` · ${d.edition_count} editions`:""}</div>
+        </div>
+      </div>`).join("")
+      : `<div class="smallmeta">Nothing else found on Open Library.</div>`}
   </div>`;
 }
 
@@ -1134,7 +1200,7 @@ let listScroll = 0;
 function openBook(key){
   const b = state.books[key];
   if(!b) return;
-  listScroll = window.scrollY || 0;
+  if(authorName === null && previewDoc === null) listScroll = window.scrollY || 0;
   currentSheetKey = key;
   descOpen = false;
   if(b.olKey) loadDesc(key); else autoMatch(key);
@@ -1143,7 +1209,15 @@ function openBook(key){
   $("#sheet").classList.remove("hidden");
   window.scrollTo(0,0);
 }
-function closeSheet(){ $("#sheet").classList.add("hidden"); currentSheetKey = null; previewIdx = null; render(); window.scrollTo(0, listScroll); }
+function closeSheet(){
+  if(authorName && (currentSheetKey || previewDoc)){
+    currentSheetKey = null; previewDoc = null;
+    renderAuthor(); window.scrollTo(0,0); return;   // back to the author page we came from
+  }
+  $("#sheet").classList.add("hidden");
+  currentSheetKey = null; previewDoc = null; authorName = null;
+  render(); window.scrollTo(0, listScroll);
+}
 function renderSheet(key){
   const b = state.books[key];
   if(!b){ closeSheet(); return; }
@@ -1168,7 +1242,7 @@ function renderSheet(key){
         : `<div class="dph"><span>${esc(b.title)}</span></div>`}
       <div class="dhead">
         <div class="dtitle">${esc(b.title)}</div>
-        <div class="dmeta">${esc(b.author||"")}<br>
+        <div class="dmeta">${b.author?`<u onclick="openAuthorOf('${key}')">${esc(b.author)}</u>`:""}<br>
           <u onclick="openEditMeta('${key}')">${b.year||"year?"} · ${b.pages?b.pages+" pages":"pages?"}</u></div>
       </div>
     </div>
