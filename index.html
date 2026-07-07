@@ -277,17 +277,8 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <body>
 <header>
   <div class="logo">
-    <div class="logo-mark">
-      <svg viewBox="0 0 24 24">
-        <rect x="4" y="1.8" width="3" height="17.2" rx="1.5" fill="#e0784a"/>
-        <rect x="4" y="1.8" width="11.4" height="3" rx="1.5" fill="#e0784a"/>
-        <rect x="12.4" y="1.8" width="3" height="10.6" rx="1.5" fill="#e0784a"/>
-        <rect x="4" y="9.4" width="11.4" height="3" rx="1.5" fill="#e0784a"/>
-        <polygon points="8.2,4.8 11.2,4.8 11.2,13.9 9.7,12.5 8.2,13.9" fill="#fbbf24"/>
-        <circle cx="8.1" cy="21.8" r="1.2" fill="#e0784a"/>
-        <circle cx="11.7" cy="21.8" r="1.2" fill="#e0784a"/>
-        <circle cx="15.3" cy="21.8" r="1.13" fill="none" stroke="#e0784a" stroke-width="1.05"/>
-      </svg>
+    <div class="logo-mark" style="overflow:hidden;background:none;border:none">
+      <img src="icon-192-v3.png" alt="" style="width:30px;height:30px;border-radius:9px">
     </div>
     <h1>Paginia</h1>
   </div>
@@ -325,9 +316,9 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <script>
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
-/* v1.4.1 */
-const APP_VERSION = "1.4.1";
-const WHATS_NEW = "New app icon \ud83c\udfa8 \u2014 remove and re-add your home-screen shortcut to see it.";
+/* v1.4.2 */
+const APP_VERSION = "1.4.2";
+const WHATS_NEW = "The new logo now also lives in the app header. \ud83c\udfa8 (Home-screen icon: remove and re-add the shortcut to refresh it.)";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
