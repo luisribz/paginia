@@ -10,8 +10,8 @@
 <meta name="apple-mobile-web-app-title" content="Paginia">
 <title>Paginia</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon-v3.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192-v3.png">
+<link rel="apple-touch-icon" href="apple-touch-icon-v4.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192-v4.png">
 <style>
 :root{
   --bg:#0a0c11; --bg2:#12151e; --bg3:#1a1e2a; --bg4:#222738; --line:#242a3a; --line2:#303752;
@@ -199,7 +199,7 @@ h2.sec{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--
 .hero{position:relative;height:190px;overflow:hidden}
 .hero .hbg{position:absolute;inset:-24px;background-size:cover;background-position:center 30%;filter:blur(24px) saturate(1.15) brightness(.72);transform:scale(1.15)}
 .hero .hgrad{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.22),rgba(0,0,0,.45) 55%,var(--bg))}
-.hero .hback{position:absolute;top:calc(12px + var(--sat));left:14px;z-index:3;background:rgba(10,12,17,.55);border-color:rgba(255,255,255,.12)}
+.hero .hback{position:fixed;top:calc(12px + var(--sat));left:14px;z-index:70;background:rgba(10,12,17,.55);border-color:rgba(255,255,255,.12)}
 .hero .hback svg{stroke:#e8eaf0}
 .dwrap{max-width:640px;margin:0 auto;padding:0 16px}
 .dtop{display:flex;gap:15px;margin-top:-64px;position:relative;z-index:2}
@@ -278,7 +278,7 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <header>
   <div class="logo">
     <div class="logo-mark" style="overflow:hidden;background:none;border:none">
-      <img src="icon-192-v3.png" alt="" style="width:30px;height:30px;border-radius:9px">
+      <img src="icon-192-v4.png" alt="" style="width:30px;height:30px;border-radius:9px">
     </div>
     <h1>Paginia</h1>
   </div>
@@ -316,9 +316,9 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <script>
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
-/* v1.4.2 */
-const APP_VERSION = "1.4.2";
-const WHATS_NEW = "The new logo now also lives in the app header. \ud83c\udfa8 (Home-screen icon: remove and re-add the shortcut to refresh it.)";
+/* v1.6.0 */
+const APP_VERSION = "1.6.0";
+const WHATS_NEW = "New logo \ud83c\udfa8 + smarter search: Open Library and Google Books together, suggestions as you type, better cover hunting, ISBN on manual add, and the back arrow now stays visible. (Home-screen icon: remove and re-add the shortcut to refresh it.)";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
@@ -954,16 +954,22 @@ function viewStats(){
   return h;
 }
 
-/* ---------- Search tab (Open Library) ---------- */
+/* ---------- Search tab (Open Library + Google Books) ---------- */
 let searching = false;
 function viewSearch(){
   let h = `<div class="searchbar">
     <div class="inputwrap">
-      <input id="q" placeholder="Search any book…" value="${esc(lastSearchQ)}" onkeydown="if(event.key==='Enter'){this.blur();doSearch()}">
+      <input id="q" placeholder="Search any book…" value="${esc(lastSearchQ)}" oninput="qLive()" onkeydown="if(event.key==='Enter'){this.blur();doSearch()}">
       ${lastSearchQ?`<button class="clearbtn" onclick="lastSearchQ='';searchResults=[];render()">✕</button>`:""}
     </div>
     <button class="icon-btn" onclick="doSearch()">${I.search}</button>
   </div>`;
+  h += `<div id="sres">${searchResultsHtml()}</div>`;
+  h += `<button class="abtn" style="width:100%;margin-top:16px" onclick="openManualAdd()">Can't find it? Add manually</button>`;
+  return h;
+}
+function searchResultsHtml(){
+  let h = "";
   if(searching) h += `<div class="empty">Searching…</div>`;
   else if(searchResults.length){
     h += searchResults.map((d,i)=>{
@@ -983,28 +989,87 @@ function viewSearch(){
       </div>`;
     }).join("");
   } else if(lastSearchQ) h += `<div class="empty"><div class="big">🤷</div>Nothing found for “${esc(lastSearchQ)}”.</div>`;
-  else h += `<div class="empty"><div class="big">📖</div>Search millions of books<br>via Open Library.</div>`;
-  h += `<button class="abtn" style="width:100%;margin-top:16px" onclick="openManualAdd()">Can't find it? Add manually</button>`;
+  else h += `<div class="empty"><div class="big">📖</div>Search millions of books<br>via Open Library & Google Books.</div>`;
   return h;
 }
-async function doSearch(){
+let sugTimer = null, searchToken = 0;
+function qLive(){
+  // live suggestions: debounced so we only search once you pause typing
+  clearTimeout(sugTimer);
+  const q = $("#q") ? $("#q").value.trim() : "";
+  if(q.length < 3) return;
+  sugTimer = setTimeout(()=>{ const el = $("#q"); if(el && el.value.trim()===q) doSearch(true); }, 450);
+}
+async function doSearch(live){
   const q = $("#q").value.trim();
   if(!q) return;
   lastSearchQ = q;
-  searching = true; render();
-  try{
-    const r = await fetch(OL+"/search.json?q="+encodeURIComponent(q)+"&limit=20&fields=key,title,author_name,first_publish_year,cover_i,number_of_pages_median");
-    const j = await r.json();
-    searchResults = (j.docs||[]).map(d=>({
-      olk: (d.key||"").split("/").pop() || null,     // "OL45804W"
-      title: d.title || "Untitled",
-      author: (d.author_name||[])[0] || "",
-      year: d.first_publish_year || null,
-      pages: d.number_of_pages_median || null,
-      cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : null,
-    }));
-  }catch(e){ searchResults = []; toast("Search failed — check your connection"); }
-  searching = false; render();
+  const token = ++searchToken;
+  if(!live){ searching = true; render(); }
+  const [ol, gb] = await Promise.allSettled([olSearch(q), gbSearch(q)]);
+  if(token !== searchToken) return;                  // a newer search superseded this one
+  const olR = ol.status==="fulfilled" ? ol.value : null;
+  const gbR = gb.status==="fulfilled" ? gb.value : null;
+  if(!olR && !gbR){ searchResults = []; if(!live) toast("Search failed — check your connection"); }
+  else searchResults = mergeResults(olR||[], gbR||[]);
+  searching = false;
+  if(live){
+    // update only the results list — never re-render the input while the user is typing
+    const el = document.getElementById("sres");
+    if(el) el.innerHTML = searchResultsHtml(); else render();
+  } else render();
+}
+async function olSearch(q){
+  const r = await fetch(OL+"/search.json?q="+encodeURIComponent(q)+"&limit=20&fields=key,title,author_name,first_publish_year,cover_i,number_of_pages_median");
+  const j = await r.json();
+  return (j.docs||[]).map(d=>({
+    olk: (d.key||"").split("/").pop() || null,     // "OL45804W"
+    title: d.title || "Untitled",
+    author: (d.author_name||[])[0] || "",
+    year: d.first_publish_year || null,
+    pages: d.number_of_pages_median || null,
+    isbn: null,
+    cover: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg` : null,
+  }));
+}
+async function gbSearch(q){
+  const r = await fetch("https://www.googleapis.com/books/v1/volumes?maxResults=20&printType=books&q="+encodeURIComponent(q));
+  const j = await r.json();
+  return (j.items||[]).map(it=>{
+    const v = it.volumeInfo||{};
+    const il = v.imageLinks||{};
+    const tn = il.thumbnail || il.smallThumbnail;
+    const ids = v.industryIdentifiers||[];
+    const isbn = (ids.find(x=>x.type==="ISBN_13")||ids.find(x=>x.type==="ISBN_10")||{}).identifier || null;
+    return {
+      olk: null,
+      title: v.title || "Untitled",
+      author: (v.authors||[])[0] || "",
+      year: v.publishedDate ? (parseInt(v.publishedDate.slice(0,4),10)||null) : null,
+      pages: v.pageCount || null,
+      isbn,
+      cover: tn ? tn.replace(/^http:/,"https:").replace("&edge=curl","") : null,
+    };
+  });
+}
+const searchKey = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
+function mergeResults(ol, gb){
+  // OL results first (they carry olKey → descriptions, matching). Google Books
+  // fills missing covers/pages/year/isbn on duplicates and appends books OL lacks.
+  const seen = new Map();
+  const kf = d => searchKey(d.title)+"|"+searchKey(d.author);
+  const out = [];
+  for(const d of ol){ out.push(d); if(!seen.has(kf(d))) seen.set(kf(d), d); }
+  for(const g of gb){
+    const m = seen.get(kf(g));
+    if(m){
+      if(!m.cover) m.cover = g.cover;
+      if(!m.pages) m.pages = g.pages;
+      if(!m.year)  m.year  = g.year;
+      if(!m.isbn)  m.isbn  = g.isbn;
+    }else{ out.push(g); seen.set(kf(g), g); }
+  }
+  return out;
 }
 function openAddModal(i){
   const d = searchResults[i];
@@ -1025,7 +1090,7 @@ function addDoc(d, st, open){
   const key = d.olk ? "ol"+d.olk : "m"+Date.now();
   if(state.books[key]){ closeModal(); openBook(key); return; }
   const b = {
-    key, olKey:d.olk, title:d.title, author:d.author, cover:d.cover, isbn:null,
+    key, olKey:d.olk, title:d.title, author:d.author, cover:d.cover, isbn:d.isbn||null,
     year:d.year, pages:d.pages, status:st, rating:0, tags:[],
     dateAdded:todayStr(), reads:[], cur:null, log:[],
   };
@@ -1045,6 +1110,8 @@ function openManualAdd(){
     <input id="mauthor" class="minput" placeholder="Author">
     <div class="mlabel">Pages (optional)</div>
     <input id="mpages" class="minput" type="number" inputmode="numeric" min="1" placeholder="e.g. 320">
+    <div class="mlabel">ISBN (optional — used to find the cover)</div>
+    <input id="misbn" class="minput" inputmode="numeric" placeholder="e.g. 9789897400520">
     <button class="abtn primary" style="width:100%" onclick="addManual()">Add to library</button>
   </div>`;
   $("#modal").classList.remove("hidden");
@@ -1054,14 +1121,17 @@ function openManualAdd(){
 function addManual(){
   const title = $("#mtitle").value.trim();
   if(!title){ toast("Give it a title"); return; }
+  const isbn = (($("#misbn")&&$("#misbn").value)||"").replace(/[^0-9Xx]/g,"") || null;
   const key = "m"+Date.now();
   state.books[key] = {
-    key, olKey:null, title, author:$("#mauthor").value.trim(), cover:null, isbn:null,
+    key, olKey:null, title, author:$("#mauthor").value.trim(), cover:null, isbn,
     year:null, pages:parseInt($("#mpages").value,10)||null, status:"to_read",
     rating:0, tags:[], dateAdded:todayStr(), reads:[], cur:null, log:[],
   };
   save(); closeModal(); render();
   toast(`“${title}” added ✓`, 3500, {label:"Open", fn:()=>openBook(key)});
+  // try to fetch cover + metadata in the background (ISBN makes this precise)
+  matchOne(state.books[key]).then(m=>{ const b = state.books[key]; if(b && applyMatch(b, m)){ save(); render(); } });
 }
 
 /* ---------- search preview sheet ---------- */
@@ -1657,6 +1727,24 @@ async function gbooksCover(isbn){
     return tn ? tn.replace(/^http:/,"https:").replace("&edge=curl","") : null;
   }catch(e){ return null; }
 }
+async function gbooksCoverByTitle(title, author){
+  // last-resort cover: Google Books by title+author, result verified against the title
+  if(!title) return null;
+  try{
+    const q = 'intitle:"'+title.split(/[:(]/)[0].trim()+'"'+(author?' inauthor:"'+String(author).split(",")[0].trim()+'"':"");
+    const r = await fetch("https://www.googleapis.com/books/v1/volumes?maxResults=5&printType=books&q="+encodeURIComponent(q));
+    const items = ((await r.json()).items)||[];
+    const bt = normT(title.split(/[:(]/)[0]);
+    for(const it of items){
+      const v = it.volumeInfo||{};
+      const dt = normT(v.title||"");
+      if(!(dt===bt || dt.indexOf(bt)===0 || bt.indexOf(dt)===0)) continue;
+      const il = v.imageLinks, tn = il && (il.thumbnail||il.smallThumbnail);
+      if(tn) return tn.replace(/^http:/,"https:").replace("&edge=curl","");
+    }
+  }catch(e){}
+  return null;
+}
 async function workCover(olk){
   try{
     const r = await fetch(OL+"/works/"+olk+".json");
@@ -1671,7 +1759,7 @@ async function matchOne(b){
       const r = await fetch(OL+"/search.json?q=isbn:"+b.isbn+"&limit=1&fields="+OL_FIELDS);
       const d = ((await r.json()).docs||[])[0];
       if(d && d.key){
-        const cover = d.cover_i ? cvId(d.cover_i) : await gbooksCover(b.isbn);
+        const cover = d.cover_i ? cvId(d.cover_i) : (await gbooksCover(b.isbn) || await gbooksCoverByTitle(b.title, b.author));
         return {olKey:(d.key||"").split("/").pop(), cover, pages:d.number_of_pages_median||null, year:d.first_publish_year||null};
       }
     }catch(e){}
@@ -1682,12 +1770,12 @@ async function matchOne(b){
     const r = await fetch(OL+"/search.json?q="+encodeURIComponent(q)+"&limit=10&fields="+OL_FIELDS);
     const d = pickBest(b, (await r.json()).docs);
     if(d){
-      const cover = d.cover_i ? cvId(d.cover_i) : await gbooksCover(b.isbn);
+      const cover = d.cover_i ? cvId(d.cover_i) : (await gbooksCover(b.isbn) || await gbooksCoverByTitle(b.title, b.author));
       return {olKey:(d.key||"").split("/").pop(), cover, pages:d.number_of_pages_median||null, year:d.first_publish_year||null};
     }
   }catch(e){}
-  // 3) no confident match — at least get an exact cover from Google Books
-  const gc = await gbooksCover(b.isbn);
+  // 3) no confident match — at least get a cover from Google Books
+  const gc = (await gbooksCover(b.isbn)) || (await gbooksCoverByTitle(b.title, b.author));
   if(gc) return {olKey:null, cover:gc, pages:null, year:null};
   return null;
 }
@@ -1699,7 +1787,7 @@ function applyMatch(b, m){
   if(!b.year && m.year) b.year = m.year;
   return true;
 }
-function improvable(){ return allBooks().filter(b=>!b.olKey || isbnCover(b.cover)); }
+function improvable(){ return allBooks().filter(b=>!b.olKey || !b.cover || isbnCover(b.cover)); }
 async function matchAllCovers(){
   if(matchingAll) return;
   const todo = improvable();
@@ -1711,9 +1799,9 @@ async function matchAllCovers(){
     done++;
     if(done===1 || done % 10 === 0 || done === todo.length) toast(`Matching… ${done}/${todo.length} · ${hit} improved`, 60000);
     try{
-      if(b.olKey && isbnCover(b.cover)){
-        // already matched but stuck with an unreliable ISBN image — use the work's own cover, else Google Books
-        const c = (await workCover(b.olKey)) || (await gbooksCover(b.isbn));
+      if(b.olKey && (!b.cover || isbnCover(b.cover))){
+        // already matched but cover missing or unreliable — use the work's own cover, else Google Books
+        const c = (await workCover(b.olKey)) || (await gbooksCover(b.isbn)) || (await gbooksCoverByTitle(b.title, b.author));
         if(c){ b.cover = c; hit++; }
       } else {
         if(applyMatch(b, await matchOne(b))) hit++;
@@ -1874,21 +1962,22 @@ function removeComment(ts){
   save(); if(currentSheetKey) renderSheet(currentSheetKey);
 }
 function bookCommentsHtml(b){
-  const social = (state.feed && state.feed.on) || (state.friends && state.friends.length);
-  const own = (state.comments||[]).filter(c=>cmtMatch(c,b));
-  const fr = (friendsCache.comments||[]).filter(c=>cmtMatch(c,b));
-  if(!social && !own.length) return "";
-  const rows = own.map(c=>({name:"You", ts:c.ts, x:c.x, mine:true}))
-    .concat(fr.map(c=>({name:c.name, ts:c.ts||0, x:c.x})))
-    .sort((a,c)=>a.ts-c.ts);
+  const mine = (state.comments||[]).filter(c => cmtMatch(c, b)).map(c => ({who:"You", own:true, ts:c.ts, x:c.x}));
+  const theirs = (friendsCache.comments||[]).filter(c => cmtMatch(c, b)).map(c => ({who:c.name||"Friend", ts:c.ts, x:c.x}));
+  const all = mine.concat(theirs).sort((a,c)=>(c.ts||0)-(a.ts||0));
   let h = `<h2 class="sec">Comments</h2>`;
-  if(rows.length) h += `<div class="readbox">` + rows.map(r=>`
-    <div class="readrow"><span class="rd" style="line-height:1.5"><b style="color:var(--acc-2)">${esc(r.name)}</b> <span style="color:var(--tx3);font-size:11px">${agoStr(r.ts)}</span><br>${esc(r.x)}</span>
-    ${r.mine?`<button class="unmark" onclick="removeComment(${r.ts})">${I.x}</button>`:""}</div>`).join("") + `</div>`;
-  h += `<div style="display:flex;gap:8px;margin:10px 0 4px">
-    <input id="cmt-in" class="minput" style="margin:0;flex:1" maxlength="280" placeholder="Comment for your friends…" onkeydown="if(event.key==='Enter')addComment('${b.key}')">
-    <button class="abtn primary" style="flex:0 0 auto" onclick="addComment('${b.key}')">Post</button></div>`;
-  if(!state.feed || !state.feed.on) h += `<div class="smallmeta">Comments stay on this device until you turn on sharing (Settings → Friends &amp; sharing).</div>`;
+  h += all.map(c => `<div class="hrow" style="align-items:flex-start">
+    <div class="hinfo">
+      <div class="ht" style="color:var(--acc-2);font-size:12.5px">${esc(c.who)} <span style="color:var(--tx3);font-weight:600">· ${agoStr(c.ts)}</span></div>
+      <div style="font-size:13.5px;margin-top:3px;white-space:normal;line-height:1.5">${esc(c.x||"")}</div>
+    </div>
+    ${c.own?`<button class="unmark" onclick="removeComment(${c.ts})" aria-label="Delete">${I.x}</button>`:""}
+  </div>`).join("") || `<div class="smallmeta">No comments yet — be the first.</div>`;
+  h += `<div style="display:flex;gap:8px;margin-top:10px">
+    <input id="cmt-in" class="minput" style="margin:0;flex:1" maxlength="280" placeholder="Write a comment…" onkeydown="if(event.key==='Enter')addComment('${b.key}')">
+    <button class="abtn primary" style="flex:0 0 auto" onclick="addComment('${b.key}')">Post</button>
+  </div>`;
+  if(!(state.feed && state.feed.on)) h += `<div class="smallmeta" style="margin-top:8px">Friends only see your comments after you turn on sharing (Settings → Friends &amp; sharing).</div>`;
   return h;
 }
 
