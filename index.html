@@ -316,9 +316,9 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <script>
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
-/* v1.6.0 */
-const APP_VERSION = "1.6.0";
-const WHATS_NEW = "New logo \ud83c\udfa8 + smarter search: Open Library and Google Books together, suggestions as you type, better cover hunting, ISBN on manual add, and the back arrow now stays visible. (Home-screen icon: remove and re-add the shortcut to refresh it.)";
+/* v1.7.0 */
+const APP_VERSION = "1.7.0";
+const WHATS_NEW = "Custom covers! Paste an image URL when adding a book manually, or use \u201cSet cover by URL\u201d on any book's page \u2014 perfect for books no database has.";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
@@ -1112,6 +1112,8 @@ function openManualAdd(){
     <input id="mpages" class="minput" type="number" inputmode="numeric" min="1" placeholder="e.g. 320">
     <div class="mlabel">ISBN (optional — used to find the cover)</div>
     <input id="misbn" class="minput" inputmode="numeric" placeholder="e.g. 9789897400520">
+    <div class="mlabel">Cover image URL (optional — e.g. copy the image link from Wook/Goodreads)</div>
+    <input id="mcover" class="minput" placeholder="https://…/cover.jpg">
     <button class="abtn primary" style="width:100%" onclick="addManual()">Add to library</button>
   </div>`;
   $("#modal").classList.remove("hidden");
@@ -1122,16 +1124,29 @@ function addManual(){
   const title = $("#mtitle").value.trim();
   if(!title){ toast("Give it a title"); return; }
   const isbn = (($("#misbn")&&$("#misbn").value)||"").replace(/[^0-9Xx]/g,"") || null;
+  const coverUrl = (($("#mcover")&&$("#mcover").value)||"").trim();
   const key = "m"+Date.now();
   state.books[key] = {
-    key, olKey:null, title, author:$("#mauthor").value.trim(), cover:null, isbn,
+    key, olKey:null, title, author:$("#mauthor").value.trim(), cover:(/^https?:\/\//.test(coverUrl)?coverUrl:null), isbn,
     year:null, pages:parseInt($("#mpages").value,10)||null, status:"to_read",
     rating:0, tags:[], dateAdded:todayStr(), reads:[], cur:null, log:[],
   };
   save(); closeModal(); render();
   toast(`“${title}” added ✓`, 3500, {label:"Open", fn:()=>openBook(key)});
-  // try to fetch cover + metadata in the background (ISBN makes this precise)
+  // try to fetch cover + metadata in the background (ISBN makes this precise);
+  // applyMatch never overwrites an existing cover, so a pasted cover URL is safe
   matchOne(state.books[key]).then(m=>{ const b = state.books[key]; if(b && applyMatch(b, m)){ save(); render(); } });
+}
+function setCoverUrl(key){
+  const b = state.books[key];
+  if(!b) return;
+  const u = prompt("Cover image URL (paste the image link, e.g. from Wook or Goodreads). Leave empty to remove the custom cover.", b.cover||"");
+  if(u === null) return;
+  const v = u.trim();
+  if(v && !/^https?:\/\//.test(v)){ toast("That doesn't look like an image URL (must start with http)"); return; }
+  b.cover = v || null;
+  save(); renderSheet(key);
+  toast(v ? "Cover set ✓" : "Cover removed — the matcher may find one on next pass");
 }
 
 /* ---------- search preview sheet ---------- */
@@ -1336,6 +1351,7 @@ function renderSheet(key){
     ${bookCommentsHtml(b)}
     <h2 class="sec">More</h2>
     <button class="abtn" style="width:100%;margin-bottom:9px" onclick="openMatch('${key}')">${b.olKey?"Re-match":"Match"} on Open Library</button>
+    <button class="abtn" style="width:100%;margin-bottom:9px" onclick="setCoverUrl('${key}')">Set cover by URL</button>
     ${b.olKey?`<a class="abtn" style="width:100%;display:block;text-decoration:none;margin-bottom:9px" href="${OL}/works/${esc(b.olKey)}" target="_blank" rel="noopener">Open Library page ↗</a>`:""}
     <button class="abtn" style="width:100%;color:var(--red)" onclick="removeBook('${key}')">Remove from library</button>
     <div class="smallmeta" style="text-align:center;margin-top:14px">Added ${fmtDate(b.dateAdded)}</div>
