@@ -1499,7 +1499,7 @@ function openSettings(){
     <button class="mrow" onclick="exportBackup()">${I.down}Export backup (JSON)<span class="md">${kb} KB</span></button>
     <button class="mrow" onclick="document.getElementById('imp').click()">${I.up}Import backup / Goodreads CSV<span class="md">.json / .csv</span></button>
     <button class="mrow" style="color:var(--red)" onclick="resetAll()">${I.trash}Reset all data</button>
-    <div class="note" style="margin-top:14px">${gistOn?"Cloud sync is on: your library auto-saves to your private gist and follows you across devices.":"Your data lives only in this browser, on this device. Set up cloud sync (or export backups) so you never lose progress."} Import accepts a Paginia backup <b>.json</b> or your <b>Goodreads library export</b> (goodreads.com → My Books → Import/Export → Export).<div style="margin-top:8px;color:var(--tx3);font-size:11.5px">Paginia v${APP_VERSION}</div></div>
+    <div class="note" style="margin-top:14px">${gistOn?"Cloud sync is on: your library auto-saves to your private gist and follows you across devices.":"Your data lives only in this browser, on this device. Set up cloud sync (or export backups) so you never lose progress."} Import accepts a Paginia backup <b>.json</b> or your <b>Goodreads library export</b> (goodreads.com → My Books → Import/Export → Export).<div style="margin-top:8px;color:var(--tx3);font-size:11.5px">Paginia v${APP_VERSION}<br>by ribz with love. And a lot of tokens.</div></div>
     <input type="file" id="imp" accept=".json,.csv,application/json,text/csv" class="hidden" onchange="importFile(this.files[0])">
   </div>`;
   $("#modal").classList.remove("hidden");
