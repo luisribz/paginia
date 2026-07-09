@@ -316,9 +316,9 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 <script>
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
-/* v1.7.0 */
-const APP_VERSION = "1.7.0";
-const WHATS_NEW = "Custom covers! Paste an image URL when adding a book manually, or use \u201cSet cover by URL\u201d on any book's page \u2014 perfect for books no database has.";
+/* v1.7.1 */
+const APP_VERSION = "1.7.1";
+const WHATS_NEW = "Custom covers (paste an image URL on manual add or via \u201cSet cover by URL\u201d), and unmatched books now have an \u201cAdd it to Open Library\u201d helper \u2014 copies the details and opens their form.";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
@@ -1137,6 +1137,16 @@ function addManual(){
   // applyMatch never overwrites an existing cover, so a pasted cover URL is safe
   matchOne(state.books[key]).then(m=>{ const b = state.books[key]; if(b && applyMatch(b, m)){ save(); render(); } });
 }
+function olAssist(key){
+  // OL has no key-based write API (cookie sessions only — CORS-blocked for client-side apps),
+  // so this is the next best thing: copy the book's data and open their add-book form.
+  const b = state.books[key];
+  if(!b) return;
+  const txt = [b.title, b.author, b.isbn].filter(Boolean).join("\n");
+  try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt); }catch(e){}
+  toast("Title, author & ISBN copied 📋 — paste into the form (needs a free OL account). Once saved, use “Match on Open Library” here.", 6000);
+  window.open("https://openlibrary.org/books/add", "_blank", "noopener");
+}
 function setCoverUrl(key){
   const b = state.books[key];
   if(!b) return;
@@ -1352,6 +1362,7 @@ function renderSheet(key){
     <h2 class="sec">More</h2>
     <button class="abtn" style="width:100%;margin-bottom:9px" onclick="openMatch('${key}')">${b.olKey?"Re-match":"Match"} on Open Library</button>
     <button class="abtn" style="width:100%;margin-bottom:9px" onclick="setCoverUrl('${key}')">Set cover by URL</button>
+    ${b.olKey?"":`<button class="abtn" style="width:100%;margin-bottom:9px" onclick="olAssist('${key}')">Add it to Open Library ↗</button>`}
     ${b.olKey?`<a class="abtn" style="width:100%;display:block;text-decoration:none;margin-bottom:9px" href="${OL}/works/${esc(b.olKey)}" target="_blank" rel="noopener">Open Library page ↗</a>`:""}
     <button class="abtn" style="width:100%;color:var(--red)" onclick="removeBook('${key}')">Remove from library</button>
     <div class="smallmeta" style="text-align:center;margin-top:14px">Added ${fmtDate(b.dateAdded)}</div>
