@@ -317,8 +317,8 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
 /* v1.7.1 */
-const APP_VERSION = "1.7.1";
-const WHATS_NEW = "Custom covers (paste an image URL on manual add or via \u201cSet cover by URL\u201d), and unmatched books now have an \u201cAdd it to Open Library\u201d helper \u2014 copies the details and opens their form.";
+const APP_VERSION = "1.8.0";
+const WHATS_NEW = "Community ratings \u2014 books now show their average reader score (Open Library, or Google Books as fallback) on the book page and in search previews. Fetch them all at once in Settings \u2192 Community ratings.";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
@@ -1174,6 +1174,7 @@ function openPreviewDoc(d){
   $("#sheet").classList.remove("hidden");
   window.scrollTo(0,0);
   if(d.olk) fetchDesc(d.olk).then(()=>{ if(previewDoc === d) renderPreview(); });
+  loadPreviewRating(d);
 }
 function renderPreview(){
   const d = previewDoc;
@@ -1202,7 +1203,7 @@ function renderPreview(){
         : `<div class="dph"><span>${esc(d.title)}</span></div>`}
       <div class="dhead">
         <div class="dtitle">${esc(d.title)}</div>
-        <div class="dmeta">${d.author?`<u onclick="openAuthor(previewDoc.author)">${esc(d.author)}</u>`:""}<br>${d.year||""}${d.pages?` · <span class="pgnum">${d.pages} pages</span>`:""}</div>
+        <div class="dmeta">${d.author?`<u onclick="openAuthor(previewDoc.author)">${esc(d.author)}</u>`:""}<br>${d.year||""}${d.pages?` · <span class="pgnum">${d.pages} pages</span>`:""}<br>${crHtml(crCache[crKeyOf(d)],"pcr")}</div>
       </div>
     </div>
     ${descPart}
@@ -1289,7 +1290,8 @@ function openBook(key){
   if(authorName === null && previewDoc === null) listScroll = window.scrollY || 0;
   currentSheetKey = key;
   descOpen = false;
-  if(b.olKey) loadDesc(key); else autoMatch(key);
+  if(b.olKey){ loadDesc(key); loadRating(key); }
+  else autoMatch(key).then(()=>loadRating(key));   // rating after the match settles (needs olKey for OL)
   loadFriendFeeds().then(ref=>{ if(ref && currentSheetKey===key) renderSheet(key); });
   renderSheet(key);
   $("#sheet").classList.remove("hidden");
@@ -1329,7 +1331,7 @@ function renderSheet(key){
       <div class="dhead">
         <div class="dtitle">${esc(b.title)}</div>
         <div class="dmeta">${b.author?`<u onclick="openAuthorOf('${key}')">${esc(b.author)}</u>`:""}<br>
-          <u onclick="openEditMeta('${key}')">${b.year||"year?"} · ${b.pages?b.pages+" pages":"pages?"}</u></div>
+          <u onclick="openEditMeta('${key}')">${b.year||"year?"} · ${b.pages?b.pages+" pages":"pages?"}</u><br>${crHtml(b.cr,"bcr")}</div>
       </div>
     </div>
     ${descHtml(b)}
@@ -1505,8 +1507,9 @@ function pickMatch(key, i){
   if(d.cover_i) b.cover = cvId(d.cover_i);          // manual pick is authoritative — always take this cover
   if(!b.pages && d.number_of_pages_median) b.pages = d.number_of_pages_median;
   if(!b.year && d.first_publish_year) b.year = d.first_publish_year;
+  b.cr = null;                                      // manual match — re-fetch the community rating
   save(); closeModal(); renderSheet(key);
-  loadDesc(key);
+  loadDesc(key); loadRating(key);
   toast("Matched ✓");
 }
 
@@ -1523,6 +1526,7 @@ function openSettings(){
       : `<button class="mrow" onclick="openSyncSetup()">${I.cloud}Set up cloud sync<span class="md">recommended</span></button>`}
     <button class="mrow" onclick="openFriends()">${I.chat}Friends &amp; sharing<span class="md">${(state.friends&&state.friends.length)?state.friends.length+" friend"+(state.friends.length>1?"s":""):((state.feed&&state.feed.on)?"sharing on":"off")} ›</span></button>
     <button class="mrow" onclick="matchAllCovers()">${I.search}Improve covers &amp; matches<span class="md">${improvable().length} to check</span></button>
+    <button class="mrow" onclick="fetchAllRatings()">${I.star}Community ratings<span class="md">${ratable().length} to fetch</span></button>
     <button class="mrow" onclick="exportBackup()">${I.down}Export backup (JSON)<span class="md">${kb} KB</span></button>
     <button class="mrow" onclick="document.getElementById('imp').click()">${I.up}Import backup / Goodreads CSV<span class="md">.json / .csv</span></button>
     <button class="mrow" style="color:var(--red)" onclick="resetAll()">${I.trash}Reset all data</button>
@@ -1692,6 +1696,97 @@ async function loadDesc(key){
     if(el) el.outerHTML = descHtml(b);
   }
 }
+/* ---------- community ratings (Open Library first, Google Books fallback) ---------- */
+const CR_TTL = 30*864e5;                       // re-fetch after ~30 days
+const crFresh = b => !!(b.cr && b.cr.ts && Date.now() - b.cr.ts < CR_TTL);
+let crCache = {};                              // preview-only, in-memory
+function crKeyOf(d){ return d.olk || d.isbn || searchKey(d.title)+"|"+searchKey(d.author); }
+function crHtml(cr, id){
+  if(!cr || !cr.n) return `<span id="${id}"></span>`;
+  const src = cr.s === "gb" ? "Google Books" : "Open Library";
+  return `<span id="${id}"><span class="starmini" style="font-size:inherit">\u2605</span> <b>${cr.a}</b> \u00b7 ${cr.n} rating${cr.n===1?"":"s"} on ${src}</span>`;
+}
+async function olRating(olk){
+  if(!olk) return null;
+  try{
+    const s = ((await (await fetch(OL+"/works/"+olk+"/ratings.json")).json()).summary) || {};
+    if(s.count && s.average) return {a:Math.round(s.average*10)/10, n:s.count, s:"ol", ts:Date.now()};
+  }catch(e){}
+  return null;
+}
+function gbPickRating(items, title){
+  const bt = normT(String(title||"").split(/[:(]/)[0]);
+  let best = null;
+  for(const it of items||[]){
+    const v = it.volumeInfo || {};
+    if(!v.averageRating || !v.ratingsCount) continue;
+    const dt = normT(v.title||"");
+    if(bt && !(dt===bt || dt.indexOf(bt)===0 || bt.indexOf(dt)===0)) continue;   // wrong book / "Summary of\u2026" junk
+    if(!best || v.ratingsCount > best.ratingsCount) best = v;
+  }
+  return best ? {a:Math.round(best.averageRating*10)/10, n:best.ratingsCount, s:"gb", ts:Date.now()} : null;
+}
+async function gbRating(isbn, title, author){
+  try{
+    if(isbn){
+      const r = await fetch("https://www.googleapis.com/books/v1/volumes?q=isbn:"+isbn);
+      const hit = gbPickRating(((await r.json()).items)||[], title);
+      if(hit) return hit;
+    }
+    if(title){
+      const q = 'intitle:"'+String(title).split(/[:(]/)[0].trim()+'"'+(author?' inauthor:"'+String(author).split(",")[0].trim()+'"':"");
+      const r = await fetch("https://www.googleapis.com/books/v1/volumes?maxResults=10&printType=books&q="+encodeURIComponent(q));
+      return gbPickRating(((await r.json()).items)||[], title);
+    }
+  }catch(e){}
+  return null;
+}
+async function fetchRating(o){                 // o: {olKey?, isbn?, title, author}
+  return (await olRating(o.olKey)) || (await gbRating(o.isbn, o.title, o.author)) || {a:0, n:0, s:null, ts:Date.now()};
+}
+async function loadRating(key){
+  const b = state.books[key];
+  if(!b || crFresh(b)) return;
+  b.cr = await fetchRating({olKey:b.olKey, isbn:b.isbn, title:b.title, author:b.author});
+  save();
+  if(currentSheetKey === key){
+    const el = document.getElementById("bcr");
+    if(el) el.outerHTML = crHtml(b.cr, "bcr");
+  }
+}
+async function loadPreviewRating(d){
+  const k = crKeyOf(d);
+  if(crCache[k] !== undefined) return;
+  crCache[k] = null;                           // in flight
+  crCache[k] = await fetchRating({olKey:d.olk, isbn:d.isbn, title:d.title, author:d.author});
+  if(previewDoc === d){
+    const el = document.getElementById("pcr");
+    if(el) el.outerHTML = crHtml(crCache[k], "pcr");
+  }
+}
+function ratable(){ return allBooks().filter(b=>!crFresh(b)); }
+let ratingAll = false;
+async function fetchAllRatings(){
+  if(ratingAll) return;
+  const todo = ratable();
+  if(!todo.length){ toast("Community ratings are up to date \u2713"); return; }
+  if(!confirm(`Fetch community ratings for ${todo.length} books?\n\nTakes ~${Math.max(1,Math.ceil(todo.length*0.45/60))} min \u2014 keep the app open.`)) return;
+  ratingAll = true; closeModal();
+  let done = 0, hit = 0;
+  for(const b of todo){
+    done++;
+    if(done===1 || done % 10 === 0 || done === todo.length) toast(`Fetching ratings\u2026 ${done}/${todo.length} \u00b7 ${hit} found`, 60000);
+    try{
+      b.cr = await fetchRating({olKey:b.olKey, isbn:b.isbn, title:b.title, author:b.author});
+      if(b.cr.n) hit++;
+    }catch(e){ /* keep going */ }
+    await new Promise(res=>setTimeout(res, 450));
+  }
+  ratingAll = false;
+  save(); render();
+  toast(`Found ratings for ${hit} of ${todo.length} books \u2713`, 6000);
+}
+
 /* quiet one-shot auto-match when a book page opens without an OL match */
 async function autoMatch(key){
   const b = state.books[key];
@@ -1699,6 +1794,7 @@ async function autoMatch(key){
   b.olTried = 1;
   try{
     applyMatch(b, await matchOne(b));
+    if(b.olKey && b.cr && b.cr.s !== "ol") b.cr = null;   // matched now — the caller re-fetches from OL
     save();
     if(currentSheetKey === key){ renderSheet(key); if(b.olKey) loadDesc(key); }
   }catch(e){ b.olTried = 0; }
