@@ -317,8 +317,8 @@ main{min-height:calc(100vh - 136px - var(--sat) - var(--sab))}
 "use strict";
 /* ============ Paginia — personal book tracker ============ */
 /* v1.7.1 */
-const APP_VERSION = "1.8.0";
-const WHATS_NEW = "Community ratings \u2014 books now show their average reader score (Open Library, or Google Books as fallback) on the book page and in search previews. Fetch them all at once in Settings \u2192 Community ratings.";
+const APP_VERSION = "1.9.1";
+const WHATS_NEW = "Offline got better: covers are now saved to your device the first time they load (so they show without a connection), and offline search lists matches from your own library instead of a dead search box.";
 const LS_KEY = "paginia.v1";
 const GIST_FILE = "paginia-sync.json";
 const OL = "https://openlibrary.org";
@@ -968,6 +968,14 @@ function viewSearch(){
   h += `<button class="abtn" style="width:100%;margin-top:16px" onclick="openManualAdd()">Can't find it? Add manually</button>`;
   return h;
 }
+function libMatches(q){
+  // offline search: books already in the library, accent-insensitive, title or author
+  const k = searchKey(q);
+  if(!k) return [];
+  return allBooks()
+    .filter(b => searchKey(b.title).indexOf(k) !== -1 || searchKey(b.author).indexOf(k) !== -1)
+    .sort((a,b)=>a.title.localeCompare(b.title)).slice(0,10);
+}
 function searchResultsHtml(){
   let h = "";
   if(searching) h += `<div class="empty">Searching…</div>`;
@@ -988,11 +996,26 @@ function searchResultsHtml(){
           : `<button class="abtn primary" style="flex:0 0 auto;padding:10px 16px" onclick="event.stopPropagation();openAddModal(${i})">Add</button>`}
       </div>`;
     }).join("");
+  } else if(offlineQ){
+    const hits = libMatches(offlineQ);
+    h += `<div class="empty"><div class="big">📡</div>You’re offline — search needs a connection.${hits.length?"<br>Meanwhile, from your library:":""}</div>`;
+    h += hits.map(b=>`
+      <div class="card" onclick="openBook('${b.key}')">
+        ${b.cover
+          ? `<img class="poster" src="${esc(b.cover)}" loading="lazy" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="poster ph" style="display:none">${I.book}</div>`
+          : `<div class="poster ph">${I.book}</div>`}
+        <div class="info">
+          <div class="title">${esc(b.title)}</div>
+          <div class="sub">${esc(b.author||"")}</div>
+          <div class="meta">${b.year||""}</div>
+        </div>
+        <span class="starmini" style="flex-shrink:0">✓ In library</span>
+      </div>`).join("");
   } else if(lastSearchQ) h += `<div class="empty"><div class="big">🤷</div>Nothing found for “${esc(lastSearchQ)}”.</div>`;
   else h += `<div class="empty"><div class="big">📖</div>Search millions of books<br>via Open Library & Google Books.</div>`;
   return h;
 }
-let sugTimer = null, searchToken = 0;
+let sugTimer = null, searchToken = 0, offlineQ = null;
 function qLive(){
   // live suggestions: debounced so we only search once you pause typing
   clearTimeout(sugTimer);
@@ -1010,8 +1033,12 @@ async function doSearch(live){
   if(token !== searchToken) return;                  // a newer search superseded this one
   const olR = ol.status==="fulfilled" ? ol.value : null;
   const gbR = gb.status==="fulfilled" ? gb.value : null;
-  if(!olR && !gbR){ searchResults = []; if(!live) toast("Search failed — check your connection"); }
-  else searchResults = mergeResults(olR||[], gbR||[]);
+  if(!olR && !gbR){
+    searchResults = [];
+    offlineQ = (typeof navigator !== "undefined" && navigator.onLine === false) ? q : null;
+    if(!live && !offlineQ) toast("Search failed — check your connection");
+  }
+  else { searchResults = mergeResults(olR||[], gbR||[]); offlineQ = null; }
   searching = false;
   if(live){
     // update only the results list — never re-render the input while the user is typing
@@ -2116,6 +2143,12 @@ $("#btn-settings").onclick = openSettings;
 render();
 if(state.gist && state.gist.token) gistPull();
 setTimeout(checkAppUpdate, 1500);
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});  // offline app shell
+window.addEventListener("online", () => {
+  // back from offline: reconcile with the cloud, then check for app updates
+  if(state && state.gist && state.gist.token) gistPull();
+  setTimeout(checkAppUpdate, 1200);
+});
 
 </script>
 </body>
