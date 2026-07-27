@@ -1,4 +1,4 @@
-/* Paginia service worker — offline app shell + cover cache (v1.9.1)
+/* Paginia service worker — offline app shell + cover cache (v1.9.2)
    Shell: network-first for everything same-origin (updates keep arriving the moment
    you're online), falling back to the cached copy when offline. API calls (Open Library,
    Google Books, GitHub) are NOT intercepted — the app handles those failing gracefully.
@@ -8,7 +8,7 @@
 const CACHE = "paginia-shell-v1";
 const IMG = "paginia-img-v1";
 const IMG_MAX = 800;
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192-v4.png", "./icon-512-v4.png", "./apple-touch-icon-v4.png"];
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192-v5.png", "./icon-512-v5.png", "./apple-touch-icon-v5.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
